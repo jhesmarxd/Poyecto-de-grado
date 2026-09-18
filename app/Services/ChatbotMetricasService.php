@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ChatbotEjecucion;
 use App\Models\Conversacion;
 use App\Models\MensajeChatbot;
 use App\Services\Chatbot\DetectorIntencion;
@@ -51,6 +52,7 @@ class ChatbotMetricasService
         $conversacionesConvertidas = $conversiones->pluck('conversacion_id')->unique()->count();
 
         $diasGrafico = $periodo === 'total' ? 30 : min((int) $periodo, 30);
+        $observabilidad = $this->observabilidad($desde);
 
         return [
             'periodo' => $periodo,
@@ -71,6 +73,7 @@ class ChatbotMetricasService
                 : 0.0,
             'intenciones' => $this->intenciones($mensajesUsuario, $totalMensajes),
             'actividad' => $this->actividadPorDia($diasGrafico),
+            'observabilidad' => $observabilidad,
         ];
     }
 
@@ -160,6 +163,34 @@ class ChatbotMetricasService
         }
 
         return $resultado;
+    }
+
+    /** @return array<string, float|int> */
+    private function observabilidad(?Carbon $desde): array
+    {
+        $consulta = ChatbotEjecucion::query()
+            ->when($desde, fn (Builder $query) => $query->where('created_at', '>=', $desde));
+        $total = (clone $consulta)->count();
+        $intentosExternos = (clone $consulta)->where('external_attempted', true)->count();
+        $usoExterno = (clone $consulta)->where('external_used', true)->count();
+        $fallbacks = (clone $consulta)->where('fallback_local', true)->count();
+        $erroresExternos = (clone $consulta)
+            ->where('external_attempted', true)
+            ->where('external_used', false)
+            ->count();
+        $latencia = (clone $consulta)
+            ->whereNotNull('external_latency_ms')
+            ->avg('external_latency_ms');
+
+        return [
+            'total' => $total,
+            'intentos_externos' => $intentosExternos,
+            'uso_externo' => $usoExterno,
+            'fallbacks' => $fallbacks,
+            'errores_externos' => $erroresExternos,
+            'tasa_uso_externo' => $this->porcentaje($usoExterno, $total),
+            'latencia_promedio_ms' => $latencia === null ? 0 : (int) round((float) $latencia),
+        ];
     }
 
     private function etiquetaIntencion(string $intencion): string

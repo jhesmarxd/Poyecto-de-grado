@@ -2,58 +2,161 @@
 
 namespace App\Services\Chatbot;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use JsonException;
 use Throwable;
 
 class ProveedorExterno
 {
-    public function analizar(string $mensaje): ?AnalisisNlp
+    public function analizar(string $mensaje): ResultadoProveedorNlp
     {
         $provider = (string) config('chatbot.provider');
-        $apiKey = $this->apiKey($provider);
 
-        if ($provider === '' || $apiKey === '') {
-            return null;
+        if ($provider === '') {
+            return ResultadoProveedorNlp::proveedorNoConfigurado();
         }
+
+        $modelo = $this->modeloPara($provider);
+        if (! in_array($provider, ['gemini', 'openai'], true)) {
+            return ResultadoProveedorNlp::fallo(
+                ResultadoProveedorNlp::ESTADO_PROVEEDOR_NO_SOPORTADO,
+                $provider,
+                $modelo,
+                false,
+                errorMessage: 'El proveedor configurado no está soportado.'
+            );
+        }
+
+        $apiKey = $this->apiKey($provider);
+        if ($apiKey === '') {
+            return ResultadoProveedorNlp::fallo(
+                ResultadoProveedorNlp::ESTADO_CLAVE_AUSENTE,
+                $provider,
+                $modelo,
+                false,
+                errorMessage: 'El proveedor no tiene una credencial configurada.'
+            );
+        }
+
+        $inicio = hrtime(true);
 
         try {
             $respuesta = match ($provider) {
                 'gemini' => $this->gemini($mensaje, $apiKey),
                 'openai' => $this->openai($mensaje, $apiKey),
-                default => null,
             };
-
-            if (! $respuesta) {
-                return null;
-            }
+            $latencia = $this->latenciaMilisegundos($inicio);
 
             if (! $respuesta->successful()) {
-                Log::warning('Chatbot NLP: el proveedor rechazo la solicitud.', $this->contextoLog($provider, $respuesta));
+                $resultado = ResultadoProveedorNlp::fallo(
+                    $this->estadoHttp($respuesta->status()),
+                    $provider,
+                    $modelo,
+                    true,
+                    $latencia,
+                    $respuesta->status(),
+                    $this->mensajeHttpSeguro($respuesta->status())
+                );
+                $this->registrarFalloSeguro($resultado);
 
-                return null;
+                return $resultado;
             }
 
             $contenido = $provider === 'gemini'
                 ? data_get($respuesta->json(), 'candidates.0.content.parts.0.text')
                 : data_get($respuesta->json(), 'choices.0.message.content');
-            $datos = is_string($contenido) ? json_decode($contenido, true) : null;
+
+            if (! is_string($contenido) || trim($contenido) === '') {
+                $resultado = ResultadoProveedorNlp::fallo(
+                    ResultadoProveedorNlp::ESTADO_RESPUESTA_VACIA,
+                    $provider,
+                    $modelo,
+                    true,
+                    $latencia,
+                    $respuesta->status(),
+                    'El proveedor devolvió una respuesta estructurada vacía.'
+                );
+                $this->registrarFalloSeguro($resultado);
+
+                return $resultado;
+            }
+
+            try {
+                $datos = json_decode($contenido, true, 512, JSON_THROW_ON_ERROR);
+            } catch (JsonException) {
+                $resultado = ResultadoProveedorNlp::fallo(
+                    ResultadoProveedorNlp::ESTADO_JSON_INVALIDO,
+                    $provider,
+                    $modelo,
+                    true,
+                    $latencia,
+                    $respuesta->status(),
+                    'El proveedor devolvió JSON inválido.'
+                );
+                $this->registrarFalloSeguro($resultado);
+
+                return $resultado;
+            }
+
+            $parametros = is_array($datos) ? $this->parametrosEstructurados($datos) : null;
             $analisis = is_array($datos) ? AnalisisNlp::desdeArray($datos) : null;
 
             if (! $analisis) {
-                Log::warning('Chatbot NLP: respuesta estructurada invalida.', $this->contextoLog($provider, $respuesta));
+                $resultado = ResultadoProveedorNlp::fallo(
+                    ResultadoProveedorNlp::ESTADO_ANALISIS_INVALIDO,
+                    $provider,
+                    $modelo,
+                    true,
+                    $latencia,
+                    $respuesta->status(),
+                    'El proveedor devolvió un análisis estructurado inválido.',
+                    $parametros
+                );
+                $this->registrarFalloSeguro($resultado);
+
+                return $resultado;
             }
 
-            return $analisis;
-        } catch (Throwable $exception) {
-            Log::warning('Chatbot NLP: fallo el proveedor; se usa el motor local.', [
-                'provider' => $provider,
-                'model' => $this->modeloPara($provider),
-                'exception' => $exception::class,
-            ]);
+            return ResultadoProveedorNlp::exito(
+                $provider,
+                $modelo,
+                $analisis,
+                $parametros ?? [],
+                $latencia,
+                $respuesta->status()
+            );
+        } catch (ConnectionException $exception) {
+            $esTimeout = $this->esTimeout($exception);
+            $resultado = ResultadoProveedorNlp::fallo(
+                $esTimeout
+                    ? ResultadoProveedorNlp::ESTADO_TIMEOUT
+                    : ResultadoProveedorNlp::ESTADO_CONEXION,
+                $provider,
+                $modelo,
+                true,
+                $this->latenciaMilisegundos($inicio),
+                errorMessage: $esTimeout
+                    ? 'La solicitud al proveedor excedió el tiempo máximo.'
+                    : 'No se pudo establecer conexión con el proveedor.'
+            );
+            $this->registrarFalloSeguro($resultado, $exception);
 
-            return null;
+            return $resultado;
+        } catch (Throwable $exception) {
+            $resultado = ResultadoProveedorNlp::fallo(
+                ResultadoProveedorNlp::ESTADO_ERROR_INESPERADO,
+                $provider,
+                $modelo,
+                true,
+                $this->latenciaMilisegundos($inicio),
+                errorMessage: 'Ocurrió un error inesperado al consultar el proveedor.'
+            );
+            $this->registrarFalloSeguro($resultado, $exception);
+
+            return $resultado;
         }
     }
 
@@ -166,14 +269,74 @@ class ProveedorExterno
         return (string) (config('chatbot.model') ?: ($provider === 'gemini' ? 'gemini-3.6-flash' : 'gpt-4o-mini'));
     }
 
-    /** @return array<string, int|string|null> */
-    private function contextoLog(string $provider, Response $response): array
+    private function estadoHttp(int $status): string
     {
-        return [
-            'provider' => $provider,
-            'model' => $this->modeloPara($provider),
-            'status' => $response->status(),
-            'request_id' => $response->header('x-request-id') ?: $response->header('x-goog-request-id'),
-        ];
+        return match (true) {
+            $status === 400 => ResultadoProveedorNlp::ESTADO_HTTP_400,
+            $status === 401 => ResultadoProveedorNlp::ESTADO_HTTP_401,
+            $status === 429 => ResultadoProveedorNlp::ESTADO_HTTP_429,
+            $status >= 500 => ResultadoProveedorNlp::ESTADO_HTTP_5XX,
+            default => ResultadoProveedorNlp::ESTADO_HTTP_ERROR,
+        };
+    }
+
+    private function mensajeHttpSeguro(int $status): string
+    {
+        return match (true) {
+            $status === 400 => 'El proveedor rechazó la estructura de la solicitud.',
+            $status === 401 => 'El proveedor rechazó la autenticación configurada.',
+            $status === 429 => 'El proveedor limitó temporalmente las solicitudes.',
+            $status >= 500 => 'El proveedor presentó un error temporal del servidor.',
+            default => 'El proveedor rechazó la solicitud.',
+        };
+    }
+
+    private function latenciaMilisegundos(int $inicio): int
+    {
+        return max(0, (int) round((hrtime(true) - $inicio) / 1_000_000));
+    }
+
+    private function esTimeout(ConnectionException $exception): bool
+    {
+        $mensaje = mb_strtolower($exception->getMessage());
+
+        return str_contains($mensaje, 'timed out')
+            || str_contains($mensaje, 'timeout')
+            || str_contains($mensaje, 'curl error 28');
+    }
+
+    /**
+     * Conserva únicamente el contrato conocido; no guarda campos arbitrarios
+     * que un proveedor pudiera incluir en su respuesta.
+     *
+     * @param  array<string, mixed>  $datos
+     * @return array<string, mixed>
+     */
+    private function parametrosEstructurados(array $datos): array
+    {
+        return array_intersect_key($datos, array_flip([
+            'intencion',
+            'reserva_id',
+            'cancha_referencia',
+            'fecha',
+            'hora_inicio',
+            'hora_fin',
+            'duracion_minutos',
+            'balon_referencia',
+        ]));
+    }
+
+    private function registrarFalloSeguro(
+        ResultadoProveedorNlp $resultado,
+        ?Throwable $exception = null,
+    ): void {
+        Log::warning('Chatbot NLP: el proveedor no produjo un análisis utilizable; se usa el motor local.', [
+            'provider' => $resultado->provider,
+            'model' => $resultado->model,
+            'external_status' => $resultado->status,
+            'http_status' => $resultado->httpStatus,
+            'latency_ms' => $resultado->latencyMs,
+            'exception' => $exception ? $exception::class : null,
+        ]);
     }
 }

@@ -4,20 +4,25 @@ namespace App\Services;
 
 use App\Models\Balon;
 use App\Models\Cancha;
+use App\Models\ChatbotEjecucion;
 use App\Models\Conversacion;
 use App\Models\Horario;
 use App\Models\MensajeChatbot;
 use App\Models\Reserva;
 use App\Models\User;
 use App\Services\Chatbot\AnalisisNlp;
+use App\Services\Chatbot\ChatbotTraceService;
 use App\Services\Chatbot\DetectorIntencion;
 use App\Services\Chatbot\ExtractorEntidades;
 use App\Services\Chatbot\PoliticaSeguridadChatbot;
 use App\Services\Chatbot\ProveedorExterno;
 use App\Services\Chatbot\ReservaConversacionalService;
+use App\Services\Chatbot\ResultadoProveedorNlp;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Throwable;
 
 class ChatbotService
 {
@@ -28,6 +33,7 @@ class ChatbotService
         private readonly ExtractorEntidades $extractor,
         private readonly PoliticaSeguridadChatbot $politicaSeguridad,
         private readonly ProveedorExterno $proveedorExterno,
+        private readonly ChatbotTraceService $traceService,
         private readonly ReservaConversacionalService $reservaConversacional,
         private readonly ReservaService $reservaService,
     ) {}
@@ -53,9 +59,11 @@ class ChatbotService
         // El proveedor externo (si está configurado y responde) tiene prioridad;
         // si no hay proveedor o falla, se usa el motor local por reglas.
         $analisisLocal = $this->analisisLocal($mensaje);
-        $analisisExterno = $this->reservaConversacional->tieneBorrador($conversacion)
-            ? null
+        $tieneBorrador = $this->reservaConversacional->tieneBorrador($conversacion);
+        $resultadoProveedor = $tieneBorrador
+            ? ResultadoProveedorNlp::noIntentado('draft_active')
             : $this->proveedorExterno->analizar($mensaje);
+        $analisisExterno = $resultadoProveedor->analysis;
         $intencionLocal = $analisisLocal->intencion;
         $intencion = $analisisExterno?->intencion ?? $intencionLocal;
 
@@ -130,7 +138,7 @@ class ChatbotService
             : $this->respuestaLocal($intencion, $conversacion, $usuario, $hora);
 
         // Guardar ambos mensajes en la conversación
-        $conversacion->mensajes()->create([
+        $mensajeUsuario = $conversacion->mensajes()->create([
             'emisor' => MensajeChatbot::EMISOR_USUARIO,
             'contenido' => $mensaje,
             'intencion' => $intencion,
@@ -140,6 +148,23 @@ class ChatbotService
             'contenido' => $respuesta,
             'intencion' => $intencion,
         ]);
+
+        $motor = $tieneBorrador
+            ? ChatbotEjecucion::MOTOR_DRAFT
+            : ($analisisExterno
+                ? ChatbotEjecucion::MOTOR_EXTERNAL
+                : ChatbotEjecucion::MOTOR_LOCAL);
+        $analisisUtilizado = $analisisExterno ?? $analisisLocal;
+        $parametrosTraza = array_merge($analisisUtilizado->toArray(), [
+            'cancha_id' => $cancha?->id,
+        ]);
+        $this->registrarTrazaSegura(
+            $mensajeUsuario,
+            $resultadoProveedor,
+            $motor,
+            $intencion,
+            $parametrosTraza
+        );
 
         return [
             'respuesta' => $respuesta,
@@ -156,7 +181,7 @@ class ChatbotService
     {
         $intencion = DetectorIntencion::SOLICITUD_BLOQUEADA;
 
-        $conversacion->mensajes()->create([
+        $mensajeUsuario = $conversacion->mensajes()->create([
             'emisor' => MensajeChatbot::EMISOR_USUARIO,
             'contenido' => $this->politicaSeguridad->contenidoRedactado($bloqueo['categoria']),
             'intencion' => $intencion,
@@ -167,7 +192,37 @@ class ChatbotService
             'intencion' => $intencion,
         ]);
 
+        $this->registrarTrazaSegura(
+            $mensajeUsuario,
+            ResultadoProveedorNlp::noIntentado('blocked_before_provider'),
+            ChatbotEjecucion::MOTOR_BLOCKED,
+            $intencion
+        );
+
         return ['respuesta' => $bloqueo['respuesta'], 'intencion' => $intencion];
+    }
+
+    /**
+     * La telemetría es best effort: nunca debe alterar la respuesta funcional.
+     *
+     * @param  array<string, mixed>  $parametros
+     */
+    private function registrarTrazaSegura(
+        MensajeChatbot $mensaje,
+        ResultadoProveedorNlp $resultado,
+        string $motor,
+        ?string $intencion,
+        array $parametros = [],
+    ): void {
+        try {
+            $this->traceService->registrar($mensaje, $resultado, $motor, $intencion, $parametros);
+        } catch (Throwable $exception) {
+            Log::warning('Chatbot observabilidad: el servicio de trazas falló sin interrumpir la respuesta.', [
+                'conversation_id' => $mensaje->conversacion_id,
+                'message_id' => $mensaje->id,
+                'exception' => $exception::class,
+            ]);
+        }
     }
 
     private function analisisLocal(string $mensaje): AnalisisNlp

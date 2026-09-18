@@ -17,6 +17,21 @@ final readonly class AnalisisNlp
         public ?string $balonReferencia = null,
     ) {}
 
+    /** @return array<string, int|string|null> */
+    public function toArray(): array
+    {
+        return [
+            'intencion' => $this->intencion,
+            'reserva_id' => $this->reservaId,
+            'cancha_referencia' => $this->canchaReferencia,
+            'fecha' => $this->fecha,
+            'hora_inicio' => $this->horaInicio,
+            'hora_fin' => $this->horaFin,
+            'duracion_minutos' => $this->duracionMinutos,
+            'balon_referencia' => $this->balonReferencia,
+        ];
+    }
+
     /** @param array<string, mixed> $datos */
     public static function desdeArray(array $datos): ?self
     {

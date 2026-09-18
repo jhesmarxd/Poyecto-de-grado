@@ -29,7 +29,10 @@ class ConversacionController extends Controller
      */
     public function show(Conversacion $conversacion): View
     {
-        $conversacion->load(['usuario', 'mensajes' => fn ($q) => $q->orderBy('created_at')]);
+        $conversacion->load([
+            'usuario',
+            'mensajes' => fn ($q) => $q->with('ejecucion')->orderBy('created_at'),
+        ]);
 
         return view('admin.chatbot.conversacion', compact('conversacion'));
     }

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class MensajeChatbot extends Model
 {
@@ -17,6 +18,7 @@ class MensajeChatbot extends Model
     protected $table = 'mensajes_chatbot';
 
     public const EMISOR_USUARIO = 'usuario';
+
     public const EMISOR_BOT = 'bot';
 
     /**
@@ -49,5 +51,10 @@ class MensajeChatbot extends Model
     public function conversacion(): BelongsTo
     {
         return $this->belongsTo(Conversacion::class);
+    }
+
+    public function ejecucion(): HasOne
+    {
+        return $this->hasOne(ChatbotEjecucion::class, 'mensaje_chatbot_id');
     }
 }

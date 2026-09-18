@@ -13,6 +13,7 @@ use App\Services\Chatbot\DetectorIntencion;
 use App\Services\Chatbot\ExtractorEntidades;
 use App\Services\Chatbot\ProveedorExterno;
 use App\Services\Chatbot\ReservaConversacionalService;
+use App\Services\Chatbot\ResultadoProveedorNlp;
 use App\Services\ChatbotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -269,12 +270,14 @@ class ChatbotTest extends TestCase
 
         $fake = new class extends ProveedorExterno
         {
-            public function analizar(string $mensaje): ?AnalisisNlp
+            public function analizar(string $mensaje): ResultadoProveedorNlp
             {
-                return new AnalisisNlp(
+                $analisis = new AnalisisNlp(
                     intencion: DetectorIntencion::CONSULTAR_PRECIOS,
                     canchaReferencia: 'Cancha Prueba',
                 );
+
+                return ResultadoProveedorNlp::exito('fake', 'fake', $analisis, $analisis->toArray());
             }
         };
 
@@ -295,11 +298,13 @@ class ChatbotTest extends TestCase
         {
             public ?string $mensajeRecibido = null;
 
-            public function analizar(string $mensaje): ?AnalisisNlp
+            public function analizar(string $mensaje): ResultadoProveedorNlp
             {
                 $this->mensajeRecibido = $mensaje;
 
-                return new AnalisisNlp(intencion: DetectorIntencion::CONSULTAR_HORARIOS);
+                $analisis = new AnalisisNlp(intencion: DetectorIntencion::CONSULTAR_HORARIOS);
+
+                return ResultadoProveedorNlp::exito('fake', 'fake', $analisis, $analisis->toArray());
             }
         };
 
@@ -336,7 +341,8 @@ class ChatbotTest extends TestCase
         ]);
 
         $proveedor = new ProveedorExterno;
-        $analisis = $proveedor->analizar('Quiero reservar mañana de 5 a 7 de la tarde.');
+        $resultado = $proveedor->analizar('Quiero reservar mañana de 5 a 7 de la tarde.');
+        $analisis = $resultado->analysis;
 
         $this->assertSame(DetectorIntencion::HACER_RESERVA, $analisis?->intencion);
         $this->assertSame('17:00:00', $analisis?->horaInicio);
@@ -533,9 +539,11 @@ class ChatbotTest extends TestCase
 
         $fake = new class extends ProveedorExterno
         {
-            public function analizar(string $mensaje): ?AnalisisNlp
+            public function analizar(string $mensaje): ResultadoProveedorNlp
             {
-                return new AnalisisNlp(intencion: DetectorIntencion::HACER_RESERVA);
+                $analisis = new AnalisisNlp(intencion: DetectorIntencion::HACER_RESERVA);
+
+                return ResultadoProveedorNlp::exito('fake', 'fake', $analisis, $analisis->toArray());
             }
         };
         $this->app->instance(ProveedorExterno::class, $fake);
@@ -680,9 +688,11 @@ class ChatbotTest extends TestCase
 
         $fake = new class extends ProveedorExterno
         {
-            public function analizar(string $mensaje): ?AnalisisNlp
+            public function analizar(string $mensaje): ResultadoProveedorNlp
             {
-                return new AnalisisNlp(intencion: DetectorIntencion::CONTACTO);
+                $analisis = new AnalisisNlp(intencion: DetectorIntencion::CONTACTO);
+
+                return ResultadoProveedorNlp::exito('fake', 'fake', $analisis, $analisis->toArray());
             }
         };
         $this->app->instance(ProveedorExterno::class, $fake);

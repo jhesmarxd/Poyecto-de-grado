@@ -55,6 +55,11 @@ class Conversacion extends Model
         return $this->hasMany(MensajeChatbot::class);
     }
 
+    public function ejecuciones(): HasMany
+    {
+        return $this->hasMany(ChatbotEjecucion::class);
+    }
+
     /**
      * Lee un valor del contexto de la conversación.
      */

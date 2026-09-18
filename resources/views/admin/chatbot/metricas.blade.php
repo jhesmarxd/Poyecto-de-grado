@@ -54,6 +54,41 @@
         </div>
     </div>
 
+    <div class="card mb-4">
+        <div class="card-head">
+            <div class="card-title-wrap">
+                <span class="eyebrow">Observabilidad Fase 1</span>
+                <h2 class="card-title">Motor de procesamiento</h2>
+            </div>
+            <span class="tag t-info">{{ $metricas['observabilidad']['total'] }} ejecuciones auditadas</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-6 col-lg">
+                    <div class="small text-muted">IA externa utilizada</div>
+                    <strong>{{ $metricas['observabilidad']['uso_externo'] }}</strong>
+                    <span class="small text-muted">· {{ $metricas['observabilidad']['tasa_uso_externo'] }}%</span>
+                </div>
+                <div class="col-6 col-lg">
+                    <div class="small text-muted">Intentos externos</div>
+                    <strong>{{ $metricas['observabilidad']['intentos_externos'] }}</strong>
+                </div>
+                <div class="col-6 col-lg">
+                    <div class="small text-muted">Fallback local</div>
+                    <strong>{{ $metricas['observabilidad']['fallbacks'] }}</strong>
+                </div>
+                <div class="col-6 col-lg">
+                    <div class="small text-muted">Errores externos</div>
+                    <strong>{{ $metricas['observabilidad']['errores_externos'] }}</strong>
+                </div>
+                <div class="col-6 col-lg">
+                    <div class="small text-muted">Latencia externa promedio</div>
+                    <strong>{{ $metricas['observabilidad']['latencia_promedio_ms'] }} ms</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="grid" style="grid-template-columns: 1.45fr 1fr; margin-bottom: 20px;">
         <div class="card">
             <div class="card-head">

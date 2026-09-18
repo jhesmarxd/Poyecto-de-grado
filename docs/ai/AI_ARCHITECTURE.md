@@ -19,7 +19,8 @@
 ChatbotService
    ├── Motor local (DetectorIntencion + ExtractorEntidades)
    └── ProveedorExterno::analizar() (Gemini | OpenAI, opcional)
-          └── AnalisisNlp (DTO validado)
+          └── ResultadoProveedorNlp (estado, latencia y error seguro)
+                 └── AnalisisNlp (DTO validado cuando la salida es utilizable)
 ```
 
 - `config/chatbot.php` centraliza proveedor, credenciales, modelo, timeout, contacto y límites de solicitudes.
@@ -38,6 +39,7 @@ ChatbotService
 | Orquestación | `app/Services/ChatbotService.php` | Resuelve entidades contra la BD y genera localmente todas las respuestas operativas |
 | Contexto | `app/Models/Conversacion.php` | Memoria conversacional controlada (`contexto` JSON) |
 | Persistencia | `app/Models/MensajeChatbot.php` | Guarda cada intercambio con su intención |
+| Observabilidad | `app/Models/ChatbotEjecucion.php` | Registra proveedor, motor, fallback, latencia, estado HTTP y parámetros sanitizados por mensaje de usuario |
 
 ## 4. Arquitectura multiagente objetivo (Sprint 6)
 
