@@ -1,0 +1,17 @@
+// Variables del tema Bootstrap
+$body-bg: #f8fafc;
+
+// Tipografía (Adminator 2026)
+$font-family-sans-serif: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+$font-family-monospace: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+$font-size-base: 0.875rem;
+$line-height-base: 1.55;
+
+// Colores base (Bootstrap 5) — los tokens 2026 re-skinean los
+// componentes en runtime con las variables --primary / --success…
+$primary: #2563eb;
+$secondary: #64748b;
+$success: #198754;
+$info: #0dcaf0;
+$warning: #ffc107;
+$danger: #dc3545;

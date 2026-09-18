@@ -1,0 +1,223 @@
+// ============================================================
+// FULLCALENDAR v6 — BRIDGE DE TOKENS (adaptado de Adminator 2026)
+// FullCalendar v6 lee sus colores desde variables --fc-*. Mapeamos
+// cada una a un token 2026, de modo que el calendario siga el tema
+// claro/oscuro automáticamente.
+// ============================================================
+
+[data-fc],
+.fc {
+  // Superficies y texto
+  --fc-page-bg-color:          var(--bg-card);
+  --fc-neutral-bg-color:       var(--bg-muted);
+  --fc-neutral-text-color:     var(--t-muted);
+  --fc-border-color:           var(--border);
+  --fc-today-bg-color:         var(--primary-soft);
+  --fc-now-indicator-color:    var(--danger);
+  --fc-highlight-color:        var(--primary-soft);
+  --fc-more-link-text-color:   var(--primary);
+  --fc-more-link-hover-bg-color: var(--bg-hover);
+
+  // Texto general
+  --fc-text: var(--t-base);
+
+  // Botones (FullCalendar dibuja sus propios botones)
+  --fc-button-bg-color:              var(--bg-muted);
+  --fc-button-border-color:          var(--border);
+  --fc-button-text-color:            var(--t-base);
+  --fc-button-hover-bg-color:        var(--bg-hover);
+  --fc-button-hover-border-color:    var(--t-light);
+  --fc-button-active-bg-color:       var(--primary);
+  --fc-button-active-border-color:   var(--primary);
+  --fc-button-active-text-color:     #fff;
+
+  // Eventos: usar --fc-event-bg-color (v6), no --fc-classic-event (v7)
+  --fc-event-bg-color:       var(--primary-soft);
+  --fc-event-border-color:   transparent;
+  --fc-event-text-color:     var(--primary);
+  --fc-list-event-hover-bg-color: var(--bg-hover);
+
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  height: 100%;
+}
+
+// Categorías de evento (clase propia por reserva/estado)
+.fc-cat-work     { --fc-event-bg-color: var(--primary-soft); --fc-event-text-color: var(--primary); }
+.fc-cat-team     { --fc-event-bg-color: var(--success-soft); --fc-event-text-color: var(--success); }
+.fc-cat-personal { --fc-event-bg-color: var(--purple-soft);  --fc-event-text-color: var(--purple); }
+.fc-cat-travel   { --fc-event-bg-color: var(--info-soft);    --fc-event-text-color: var(--info); }
+.fc-cat-finance  { --fc-event-bg-color: var(--warning-soft); --fc-event-text-color: var(--warning); }
+.fc-cat-birthday { --fc-event-bg-color: var(--pink-soft);    --fc-event-text-color: var(--pink); }
+
+// Cabeceras de columna (día de la semana)
+.fc .fc-col-header-cell-cushion {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--t-light);
+  text-decoration: none;
+}
+
+// Contenido de celdas de día
+.fc .fc-daygrid-day-number {
+  color: var(--t-base);
+  font-size: 12.5px;
+  text-decoration: none;
+}
+
+// Título de la vista (mes)
+.fc .fc-toolbar-title {
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 700;
+  color: var(--t-base);
+}
+
+// Calendario operativo compartido (administración, recepción y cliente)
+.reservation-calendar-shell {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.calendar-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.calendar-filter {
+  flex: 1 1 220px;
+  max-width: 340px;
+}
+
+.calendar-filter .form-label {
+  margin-bottom: 5px;
+  color: var(--t-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.reservation-calendar-card {
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+}
+
+.reservation-calendar {
+  min-height: 520px;
+  transition: opacity 160ms ease;
+}
+
+.reservation-calendar-shell.is-loading .reservation-calendar { opacity: .55; }
+
+.calendar-status,
+.calendar-empty {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-muted);
+  color: var(--t-muted);
+  font-size: 12.5px;
+}
+
+.calendar-status::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 8px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  vertical-align: -2px;
+  animation: calendar-spin 700ms linear infinite;
+}
+
+@keyframes calendar-spin { to { transform: rotate(360deg); } }
+
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-soft);
+  color: var(--t-muted);
+  font-size: 12px;
+}
+
+.calendar-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.calendar-legend i { width: 9px; height: 9px; border-radius: 3px; }
+.calendar-legend .is-pending { background: #ffc107; }
+.calendar-legend .is-confirmed { background: #198754; }
+.calendar-legend .is-completed { background: #6c757d; }
+.calendar-legend .is-cancelled { background: #dc3545; opacity: .62; }
+
+.fc .reserva-evento {
+  border-radius: 5px;
+  padding: 2px 4px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgb(0 0 0 / .12);
+}
+
+.fc .reserva-estado-cancelada {
+  opacity: .62;
+  text-decoration: line-through;
+}
+
+.fc .fc-button {
+  border-radius: 7px;
+  box-shadow: none !important;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.fc .fc-scrollgrid { border-radius: 8px; overflow: hidden; }
+.fc .fc-day-today .fc-daygrid-day-number { color: var(--primary); font-weight: 700; }
+
+.calendar-detail {
+  display: grid;
+  gap: 0;
+  margin-top: 8px;
+  text-align: left;
+}
+
+.calendar-detail-row {
+  display: grid;
+  grid-template-columns: minmax(110px, .8fr) minmax(0, 1.5fr);
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.calendar-detail-label { color: var(--t-muted); font-size: 12px; font-weight: 600; }
+.calendar-detail-value { color: var(--t-base); font-size: 12.5px; overflow-wrap: anywhere; }
+.calendar-external-link {
+  justify-self: start;
+  margin-top: 14px;
+  color: var(--primary);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .calendar-filters { padding: 12px; }
+  .calendar-filter { flex-basis: 100%; max-width: none; }
+  .reservation-calendar-card { padding: 12px; }
+  .reservation-calendar { min-height: 360px; }
+  .fc .fc-toolbar { align-items: stretch; flex-direction: column; gap: 10px; }
+  .fc .fc-toolbar-chunk { display: flex; justify-content: center; }
+  .fc .fc-toolbar-title { font-size: 18px; }
+  .fc .fc-toolbar-chunk:last-child { display: none; }
+  .fc .fc-list-event-title { white-space: normal; }
+  .calendar-detail-row { grid-template-columns: 90px minmax(0, 1fr); gap: 8px; }
+}

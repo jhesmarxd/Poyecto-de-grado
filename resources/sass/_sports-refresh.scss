@@ -1,0 +1,479 @@
+// ============================================================
+// WALLY SPORT REFRESH
+// Lenguaje visual deportivo moderno: noche, turquesa y lima.
+// Este archivo se carga al final para unificar auth, público y panel.
+// ============================================================
+
+:root[data-theme='light'] {
+  --bg-body: #eef6f6;
+  --bg-card: #ffffff;
+  --bg-sidebar: #071a2b;
+  --bg-hover: #e6f2f2;
+  --bg-muted: #e8f1f2;
+  --t-base: #102637;
+  --t-muted: #5c7180;
+  --t-light: #8397a3;
+  --border: #d7e5e7;
+  --border-soft: #e6eff0;
+  --purple: #6d5dfc;
+  --purple-soft: #f0edff;
+  --info: #0baec5;
+  --info-soft: #e2f8fb;
+  --warning: #e49b08;
+  --warning-soft: #fff7db;
+  --danger: #eb5e55;
+  --danger-soft: #fff0ee;
+  --shadow-sm: 0 2px 7px rgb(7 26 43 / 0.07);
+  --shadow-card: 0 12px 35px -24px rgb(7 26 43 / 0.42), 0 2px 8px rgb(7 26 43 / 0.05);
+  --shadow-lg: 0 24px 60px -30px rgb(7 26 43 / 0.52);
+  --overlay: rgb(238 246 246 / 0.84);
+}
+
+:root[data-theme='dark'] {
+  --bg-body: #06121f;
+  --bg-card: #0b2030;
+  --bg-sidebar: #04101c;
+  --bg-hover: #102d3e;
+  --bg-muted: #0d2636;
+  --t-base: #eef9f8;
+  --t-muted: #9ab2bb;
+  --t-light: #6f8994;
+  --border: #183a4b;
+  --border-soft: #123040;
+  --purple: #9588ff;
+  --purple-soft: #211e4a;
+  --info: #3bd8e4;
+  --info-soft: #0b3540;
+  --warning: #f4c44f;
+  --warning-soft: #3a2d0c;
+  --danger: #ff8178;
+  --danger-soft: #3b1e20;
+  --shadow-sm: 0 3px 10px rgb(0 0 0 / 0.25);
+  --shadow-card: 0 14px 38px -24px rgb(0 0 0 / 0.78), 0 2px 8px rgb(0 0 0 / 0.22);
+  --shadow-lg: 0 28px 70px -32px rgb(0 0 0 / 0.9);
+  --overlay: rgb(6 18 31 / 0.86);
+}
+
+:root {
+  --sport-navy: #071a2b;
+  --sport-cyan: #19c8ce;
+  --sport-lime: #b8e000;
+  --sport-coral: #ff6b5f;
+  --sport-radius: 16px;
+}
+
+body {
+  background-color: var(--bg-body);
+  background-image:
+    radial-gradient(circle at 86% 5%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 28rem),
+    radial-gradient(circle at 35% 95%, color-mix(in srgb, var(--accent, var(--sport-lime)) 7%, transparent), transparent 24rem);
+  background-attachment: fixed;
+}
+
+::selection {
+  color: var(--sport-navy);
+  background: color-mix(in srgb, var(--accent, var(--sport-lime)) 78%, white);
+}
+
+// Shell y navegación
+.shell { grid-template-columns: 258px 1fr; }
+
+.d-sidebar {
+  background:
+    radial-gradient(circle at 20% 0%, rgb(25 200 206 / 0.2), transparent 15rem),
+    linear-gradient(180deg, #08263a 0%, var(--sport-navy) 54%, #04121f 100%);
+  border-right: 0;
+  box-shadow: 14px 0 44px -34px rgb(0 0 0 / 0.8);
+}
+
+.d-sidebar .brand { border-color: rgb(255 255 255 / 0.09); }
+.d-sidebar .brand-logo,
+.public-brand-logo {
+  background: linear-gradient(145deg, var(--primary-light), var(--primary));
+  border: 1px solid rgb(255 255 255 / 0.16);
+  box-shadow: 0 8px 22px -10px var(--primary);
+  transform: rotate(-4deg);
+}
+.d-sidebar .brand-name { color: #f5ffff; }
+.d-sidebar .brand-tag,
+.d-sidebar .nav-label,
+.d-sidebar .workspace-role { color: rgb(203 231 235 / 0.55); }
+.d-sidebar .nav-link { color: rgb(218 238 240 / 0.72); border: 1px solid transparent; }
+.d-sidebar .nav-link:hover {
+  color: #fff;
+  background: rgb(255 255 255 / 0.07);
+  border-color: rgb(255 255 255 / 0.06);
+  transform: translateX(2px);
+}
+.d-sidebar .nav-link.is-active {
+  color: #fff;
+  background: linear-gradient(90deg, rgb(0 140 149 / 0.42), rgb(0 140 149 / 0.12));
+  border-color: rgb(25 200 206 / 0.18);
+  box-shadow: inset 3px 0 0 var(--accent, var(--sport-lime));
+}
+.d-sidebar .nav-link.is-active svg { color: var(--accent, var(--sport-lime)); }
+.d-sidebar .sidebar-footer { border-color: rgb(255 255 255 / 0.09); }
+.d-sidebar .workspace:hover { background: rgb(255 255 255 / 0.06); }
+.d-sidebar .workspace-name { color: #f3ffff; }
+.d-sidebar .workspace-avatar,
+.avatar {
+  background: linear-gradient(145deg, var(--primary-light), var(--primary-dark));
+  box-shadow: 0 7px 20px -10px var(--primary);
+}
+
+.d-topbar {
+  height: 68px;
+  border-bottom-color: color-mix(in srgb, var(--primary) 12%, var(--border));
+  box-shadow: 0 8px 28px -28px var(--sport-navy);
+}
+
+.public-topbar {
+  height: 70px;
+  background: color-mix(in srgb, var(--bg-card) 88%, transparent);
+  box-shadow: 0 10px 35px -32px var(--sport-navy);
+}
+
+.content { padding-top: 38px; }
+
+// Tipografía, cabeceras y componentes
+.hero {
+  position: relative;
+  align-items: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 72px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), var(--accent, var(--sport-lime)));
+}
+.eyebrow {
+  color: var(--primary);
+  font-weight: 750;
+  letter-spacing: 0.14em;
+}
+.hero-title { font-size: clamp(30px, 3.4vw, 42px); font-weight: 760; }
+.hero-title .accent {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent, var(--sport-lime)) 72%, transparent);
+  text-decoration-thickness: 0.14em;
+  text-underline-offset: 0.12em;
+}
+
+.card,
+.kpi-card {
+  border: 1px solid color-mix(in srgb, var(--primary) 7%, var(--border));
+  border-radius: var(--sport-radius);
+  box-shadow: var(--shadow-card);
+}
+.card {
+  overflow: hidden;
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+}
+.card:hover { border-color: color-mix(in srgb, var(--primary) 18%, var(--border)); }
+.kpi-card { overflow: hidden; }
+.kpi-card::before { width: 76px; height: 76px; opacity: 0.1; }
+
+.btn,
+.auth-btn {
+  border-radius: 11px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.btn--primary,
+.auth-btn,
+.btn-primary {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--primary-light), var(--primary-dark));
+  box-shadow: 0 10px 24px -14px var(--primary);
+}
+.btn--primary:hover,
+.auth-btn:hover,
+.btn-primary:hover {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  box-shadow: 0 14px 28px -14px var(--primary);
+}
+.btn--success,
+.btn-success {
+  color: var(--sport-navy);
+  border-color: transparent;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent, var(--sport-lime)) 82%, white), var(--accent, var(--sport-lime)));
+}
+
+.form-control,
+.form-select {
+  border-radius: 11px;
+  background-color: color-mix(in srgb, var(--bg-card) 94%, var(--primary) 2%);
+}
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-ring);
+}
+
+.table > :not(caption) > * > * { padding-top: 0.9rem; padding-bottom: 0.9rem; }
+.table thead th {
+  color: var(--t-muted);
+  background: color-mix(in srgb, var(--bg-muted) 78%, var(--primary) 3%);
+  border-bottom-color: color-mix(in srgb, var(--primary) 12%, var(--border));
+  font-size: 0.71rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.table tbody tr { transition: background-color 160ms ease, transform 160ms ease; }
+.table tbody tr:hover { background: color-mix(in srgb, var(--primary) 5%, var(--bg-card)); }
+.table tbody tr.is-playing-row {
+  background: color-mix(in srgb, var(--accent, var(--sport-lime)) 7%, var(--bg-card));
+  box-shadow: inset 3px 0 0 var(--accent, var(--sport-lime));
+}
+
+.tabs.pills {
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--bg-muted) 84%, transparent);
+}
+.tabs.pills .tab { border-radius: 9px; }
+.tabs.pills .tab.is-active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary-light), var(--primary-dark));
+  box-shadow: 0 8px 18px -12px var(--primary);
+}
+
+.badge { border-radius: 999px; padding: 0.42em 0.72em; }
+
+// Autenticación con escena generada
+.auth-shell { background: var(--bg-body); }
+.auth-aside {
+  isolation: isolate;
+  min-height: 100vh;
+  background-image:
+    linear-gradient(180deg, rgb(3 15 27 / 0.08) 0%, rgb(3 15 27 / 0.28) 42%, rgb(3 15 27 / 0.94) 100%),
+    linear-gradient(90deg, rgb(3 15 27 / 0.2), transparent 62%),
+    url('/img/generated/login-wally-chibi-v1.png');
+  background-size: cover;
+  background-position: 50% 54%;
+  border-left: 1px solid rgb(255 255 255 / 0.1);
+}
+.auth-aside::before {
+  inset: 0;
+  width: auto;
+  aspect-ratio: auto;
+  background:
+    linear-gradient(125deg, rgb(25 200 206 / 0.17), transparent 35%),
+    repeating-linear-gradient(115deg, transparent 0 58px, rgb(255 255 255 / 0.018) 59px 60px);
+}
+.auth-aside::after {
+  inset: auto 0 0;
+  width: auto;
+  height: 48%;
+  background: linear-gradient(transparent, rgb(4 17 29 / 0.88));
+}
+.auth-brand .logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: rgb(4 21 34 / 0.54);
+  border-color: rgb(184 224 0 / 0.45);
+  box-shadow: 0 12px 26px -16px var(--sport-lime);
+}
+.auth-brand .name { font-size: 18px; }
+.auth-aside-body {
+  max-width: 500px;
+  padding: 24px;
+  margin: auto 0 10px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 22px;
+  background: rgb(4 19 31 / 0.48);
+  backdrop-filter: blur(14px) saturate(125%);
+  box-shadow: 0 24px 70px -34px rgb(0 0 0 / 0.78);
+}
+.auth-aside-eyebrow { color: var(--sport-lime); }
+.auth-aside h1 { font-size: clamp(34px, 4vw, 52px); }
+.auth-aside p { max-width: 46ch; margin-bottom: 0; }
+.auth-sport-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 22px;
+}
+.auth-sport-point {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.08);
+  color: rgb(242 255 255 / 0.9);
+  font-size: 11.5px;
+  font-weight: 650;
+}
+.auth-sport-point::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--sport-lime);
+  box-shadow: 0 0 0 4px rgb(184 224 0 / 0.12);
+}
+.auth-main {
+  position: relative;
+  background:
+    radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 20rem),
+    var(--bg-body);
+}
+.auth-main::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  background-image: radial-gradient(color-mix(in srgb, var(--primary) 40%, transparent) 0.8px, transparent 0.8px);
+  background-size: 18px 18px;
+  mask-image: linear-gradient(to bottom, #000, transparent 75%);
+}
+.auth-main > * { position: relative; z-index: 1; }
+.auth-card {
+  max-width: 440px;
+  padding: 34px;
+  border: 1px solid color-mix(in srgb, var(--primary) 12%, var(--border));
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--bg-card) 92%, transparent);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(14px);
+}
+.auth-logo {
+  border-radius: 19px;
+  background: linear-gradient(145deg, var(--primary-light), var(--primary-dark));
+  box-shadow: 0 16px 32px -18px var(--primary);
+  transform: rotate(-5deg);
+}
+.auth-field > input { min-height: 50px; border-radius: 12px; }
+.auth-btn { min-height: 48px; }
+
+// Mascotas y calendario
+.hero-mascot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+}
+.hero-mascot img {
+  width: 118px;
+  height: 104px;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 16px rgb(7 26 43 / 0.2));
+  animation: sport-float 3.8s ease-in-out infinite;
+}
+.hero-mascot-copy {
+  max-width: 110px;
+  color: var(--t-muted);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+.hero-mascot-copy strong { display: block; color: var(--primary); font-size: 12px; }
+
+.calendar-sport-guide {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: auto;
+}
+.calendar-sport-guide img {
+  width: 72px;
+  height: 64px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 12px rgb(7 26 43 / 0.18));
+  animation: sport-float 4.2s ease-in-out infinite reverse;
+}
+.calendar-sport-guide span { color: var(--t-muted); font-size: 11.5px; max-width: 150px; }
+
+.fc .fc-event.is-playing-slot { padding-right: 16px; }
+.fc .fc-event.is-playing-slot::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  width: 8px;
+  height: 8px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--sport-lime);
+  box-shadow: inset -2px -2px 0 rgb(7 26 43 / 0.16), 0 2px 5px rgb(0 0 0 / 0.2);
+  animation: sport-ball-bounce 900ms ease-in-out infinite;
+}
+
+.sports-empty::before {
+  content: '';
+  display: block;
+  width: 82px;
+  height: 72px;
+  margin: 0 auto 8px;
+  background: url('/img/generated/wally-team-chibi-v1.png') center 12% / 96px auto no-repeat;
+  filter: drop-shadow(0 10px 12px rgb(7 26 43 / 0.14));
+}
+.sports-empty strong,
+.sports-empty span { display: block; }
+.sports-empty strong { color: var(--t-base); font-size: 13px; }
+.sports-empty span { margin-top: 3px; font-size: 11.5px; }
+
+#calendario { position: relative; min-height: 420px; }
+.is-calendar-loading #calendario::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  border-radius: 12px;
+  background:
+    linear-gradient(100deg, transparent 20%, color-mix(in srgb, var(--primary) 8%, transparent) 42%, transparent 64%) 0 0 / 220% 100%,
+    color-mix(in srgb, var(--bg-card) 88%, transparent);
+  animation: skeleton-sweep 1.1s linear infinite;
+}
+
+@keyframes sport-float {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-7px) rotate(1deg); }
+}
+@keyframes sport-ball-bounce {
+  0%, 100% { transform: translateY(-3px) scale(1); }
+  50% { transform: translateY(4px) scale(.92); }
+}
+@keyframes skeleton-sweep { to { background-position: -220% 0, 0 0; } }
+
+@media (max-width: 1100px) {
+  .shell { grid-template-columns: 74px 1fr; }
+  .hero-mascot-copy { display: none; }
+  .hero-mascot img { width: 88px; height: 78px; }
+}
+
+@media (max-width: 840px) {
+  .auth-aside { background-position: center 45%; }
+  .auth-aside-body { margin-top: auto; }
+  .auth-card { padding: 28px; }
+  .calendar-sport-guide span { display: none; }
+}
+
+@media (max-width: 720px) {
+  .shell { display: block; }
+  .hero-mascot { display: none; }
+  .auth-card { padding: 24px 20px; border-radius: 20px; }
+  .content { padding-top: 26px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

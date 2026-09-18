@@ -1,0 +1,135 @@
+// ============================================================
+// TEMPORIZADOR DE LA PRÓXIMA RESERVA DEL CLIENTE
+// ============================================================
+
+.reservation-countdown {
+  --countdown-accent: var(--primary);
+  --countdown-soft: var(--primary-soft);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  margin-bottom: 22px;
+  padding: 18px 22px;
+  border-left: 4px solid var(--countdown-accent);
+  background:
+    radial-gradient(circle at 88% 15%, color-mix(in srgb, var(--countdown-accent) 12%, transparent), transparent 34%),
+    var(--bg-card);
+  overflow: hidden;
+}
+
+.reservation-countdown[data-phase='hour'],
+.reservation-countdown[data-phase='thirty'] {
+  --countdown-accent: var(--warning);
+  --countdown-soft: var(--warning-soft);
+}
+
+.reservation-countdown[data-phase='ten'] {
+  --countdown-accent: var(--orange);
+  --countdown-soft: var(--orange-soft);
+}
+
+.reservation-countdown[data-phase='active'] {
+  --countdown-accent: var(--success);
+  --countdown-soft: var(--success-soft);
+}
+
+.reservation-countdown[data-phase='finished'] {
+  --countdown-accent: var(--t-light);
+  --countdown-soft: var(--bg-muted);
+}
+
+.reservation-countdown__identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.reservation-countdown__icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  border-radius: 14px;
+  background: var(--countdown-soft);
+  color: var(--countdown-accent);
+  font-size: 22px;
+
+  img {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+  }
+}
+
+.reservation-countdown__status {
+  display: inline-flex;
+  margin-bottom: 3px;
+  color: var(--countdown-accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.reservation-countdown h2 {
+  margin: 0;
+  color: var(--t-base);
+  font-family: 'Inter Tight', 'Inter', sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.reservation-countdown p {
+  margin: 2px 0 0;
+  color: var(--t-muted);
+  font-size: 13px;
+}
+
+.reservation-countdown__timer {
+  display: grid;
+  justify-items: end;
+  flex: 0 0 auto;
+}
+
+.reservation-countdown__timer > span,
+.reservation-countdown__timer > small {
+  color: var(--t-muted);
+  font-size: 10px;
+}
+
+.reservation-countdown__timer > span {
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.reservation-countdown__timer strong {
+  color: var(--countdown-accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(26px, 4vw, 36px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+}
+
+@media (max-width: 620px) {
+  .reservation-countdown {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+    padding: 17px;
+  }
+
+  .reservation-countdown__timer {
+    justify-items: start;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-soft);
+  }
+}

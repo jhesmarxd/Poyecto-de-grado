@@ -1,0 +1,224 @@
+// ============================================================
+// DASHBOARD — 2026 (portado de Adminator 2026)
+// KPIs + secciones del panel. El chat-frame se reutiliza en el
+// widget flotante del chatbot.
+// ============================================================
+
+// ---------- Grid de KPIs ----------
+.kpi-grid {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 22px 20px;
+  box-shadow: var(--shadow-card);
+  animation: rise-in 600ms cubic-bezier(.2,.7,.2,1) both;
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform 220ms cubic-bezier(.2,.7,.2,1),
+              box-shadow 220ms ease,
+              border-color 220ms ease;
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto auto;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle at top right, currentColor, transparent 65%);
+  opacity: 0.08;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+.kpi-card:hover::before { opacity: 0.14; }
+.kpi-card.c-success { color: var(--success); }
+.kpi-card.c-danger  { color: var(--danger); }
+.kpi-card.c-purple  { color: var(--purple); }
+.kpi-card.c-primary { color: var(--primary); }
+
+.kpi-card:nth-child(1) { animation-delay: 60ms; }
+.kpi-card:nth-child(2) { animation-delay: 120ms; }
+.kpi-card:nth-child(3) { animation-delay: 180ms; }
+.kpi-card:nth-child(4) { animation-delay: 240ms; }
+
+.kpi-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+  position: relative;
+}
+.kpi-identity {
+  display: flex; align-items: center; gap: 10px;
+  min-width: 0;
+}
+
+.kpi-icon {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.kpi-icon svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 1.9; fill: none; }
+.kpi-icon.primary { background: var(--primary-soft); color: var(--primary); }
+.kpi-icon.success { background: var(--success-soft); color: var(--success); }
+.kpi-icon.info    { background: var(--info-soft);    color: var(--info); }
+.kpi-icon.purple  { background: var(--purple-soft);  color: var(--purple); }
+.kpi-icon.danger  { background: var(--danger-soft);  color: var(--danger); }
+.kpi-icon.warning { background: var(--warning-soft); color: var(--warning); }
+
+.kpi-label {
+  font-size: 13px;
+  color: var(--t-muted);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kpi-value {
+  font-family: 'Inter Tight', 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  color: var(--t-base);
+  position: relative;
+}
+.kpi-value sup {
+  font-size: 17px;
+  color: var(--t-muted);
+  vertical-align: top;
+  font-weight: 500;
+  margin-left: 3px;
+  line-height: 2.1;
+}
+
+.kpi-compare {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px;
+  color: var(--t-light);
+  font-weight: 500;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-soft);
+  margin-top: auto;
+}
+.kpi-compare strong {
+  color: var(--t-base);
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  letter-spacing: -0.01em;
+}
+.kpi-compare svg {
+  width: 11px; height: 11px;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  fill: none;
+  flex-shrink: 0;
+}
+.kpi-compare .up   { color: var(--success); }
+.kpi-compare .down { color: var(--danger); }
+.kpi-compare .flat { color: var(--purple); }
+.kpi-compare .info { color: var(--info); }
+.kpi-compare .sep { color: var(--t-light); opacity: 0.45; font-weight: 400; }
+
+.kpi-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 4px 9px;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 4px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+.kpi-pill.up   { background: var(--success-soft); color: var(--success); }
+.kpi-pill.down { background: var(--danger-soft);  color: var(--danger); }
+.kpi-pill.flat { background: var(--purple-soft);  color: var(--purple); }
+.kpi-pill.info { background: var(--info-soft);    color: var(--info); }
+.kpi-pill svg { width: 10px; height: 10px; stroke: currentColor; stroke-width: 2.5; fill: none; }
+
+// ---------- Quick chat (reutilizado por el widget del chatbot) ----------
+.chat-frame {
+  margin: -6px -6px 0;
+  border-radius: 12px;
+  background: var(--bg-muted);
+  overflow: hidden;
+}
+.chat-messages {
+  padding: 20px;
+  display: flex; flex-direction: column;
+  gap: 16px;
+  min-height: 200px;
+}
+.chat-row { display: flex; gap: 10px; max-width: min(85%, 560px); }
+.chat-row.me { margin-left: auto; flex-direction: row-reverse; }
+.chat-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  color: var(--t-base);
+  display: grid; place-items: center;
+  font-weight: 600;
+  font-size: 11.5px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+.chat-avatar.me { background: linear-gradient(135deg, var(--primary), var(--purple)); color: #fff; border: 0; }
+.chat-stack { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.chat-row.me .chat-stack { align-items: flex-end; }
+.chat-bubble {
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  border-top-left-radius: 4px;
+  font-size: 13px;
+  color: var(--t-base);
+  line-height: 1.45;
+  box-shadow: var(--shadow-sm);
+}
+.chat-row.me .chat-bubble {
+  background: var(--primary); color: #fff; border-color: var(--primary);
+  border-top-left-radius: 14px;
+  border-top-right-radius: 4px;
+}
+.chat-ts {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--t-light);
+  letter-spacing: 0.04em;
+  padding: 0 4px;
+}
+.chat-input-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+}
+.chat-input {
+  flex: 1; background: transparent; border: 0; outline: 0;
+  font-size: 13.5px; color: var(--t-base); padding: 4px 0;
+}
+.chat-input::placeholder { color: var(--t-light); }
+.chat-send {
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border-radius: 999px;
+  background: var(--primary); color: #fff;
+  transition: background 180ms;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px -1px color-mix(in oklab, var(--primary) 40%, transparent);
+}
+.chat-send:hover { background: var(--primary-dark); }
+.chat-send svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2; fill: none; }

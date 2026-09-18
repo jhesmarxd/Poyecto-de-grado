@@ -1,0 +1,17 @@
+// Variables del tema
+@import 'variables';
+
+// Bootstrap 5
+@import 'bootstrap/scss/bootstrap';
+
+// Skin 2026 (Adminator sobre Bootstrap) — después de Bootstrap
+@import '2026';
+
+// Widget de chat del chatbot
+@import 'chatbot';
+
+// Renovación deportiva transversal
+@import 'sports-refresh';
+
+// Portada pública inspirada en la identidad visual de Wally
+@import 'welcome';

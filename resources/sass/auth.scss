@@ -1,0 +1,276 @@
+// ============================================================
+// Página de autenticación — skin 2026 (pantalla dividida)
+// Autónomo: incluye Bootstrap + el re-skin 2026 porque el layout
+// de auth NO carga app.scss.
+// ============================================================
+
+// Variables del tema
+@import 'variables';
+
+// Bootstrap 5 (las vistas de auth usan clases Bootstrap)
+@import 'bootstrap/scss/bootstrap';
+
+@import '2026/tokens';
+@import '2026/base';
+@import '2026/animations';
+@import '2026/auth';
+@import '2026/bootstrap';
+@import '2026/responsive';
+
+// Re-skin de los campos flotantes que ya usan las vistas
+.auth-field {
+  position: relative;
+
+  > input {
+    width: 100%;
+    padding: 11px 12px;
+    font-size: 13.5px;
+    color: var(--t-base);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  > input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-soft);
+    outline: none;
+  }
+
+  > input.is-invalid { border-color: var(--danger); }
+  > input.is-invalid:focus { box-shadow: 0 0 0 4px var(--danger-soft); }
+
+  > label {
+    position: absolute;
+    left: 1rem;
+    top: 0.85rem;
+    margin: 0;
+    padding: 0 0.25rem;
+    font-size: 0.9rem;
+    color: var(--t-muted);
+    background: transparent;
+    pointer-events: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  > input:focus + label,
+  > input:not(:placeholder-shown) + label {
+    top: -0.45rem;
+    left: 0.8rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--bg-card);
+    border-radius: 0.3rem;
+    padding: 0 0.35rem;
+  }
+
+  > input.is-invalid + label { color: var(--danger); }
+}
+
+.auth-password > input { padding-right: 3rem; }
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  border-radius: 0.6rem;
+  background: transparent;
+  color: var(--t-muted);
+  cursor: pointer;
+  z-index: 2;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+.password-toggle:hover {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+.password-toggle .icon-eye-off { display: none; }
+.password-toggle.is-visible .icon-eye { display: none; }
+.password-toggle.is-visible .icon-eye-off { display: block; }
+
+.auth-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--t-muted);
+  font-size: 0.9rem;
+
+  .form-check-input {
+    width: 1.15rem;
+    height: 1.15rem;
+    margin: 0;
+    accent-color: var(--primary);
+    cursor: pointer;
+    box-shadow: none;
+  }
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 11px 14px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary);
+  box-shadow: 0 1px 2px var(--primary-ring);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px color-mix(in oklab, var(--primary) 35%, transparent);
+  }
+
+  &:active { transform: translateY(0) scale(0.99); }
+}
+
+.google-auth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 14px;
+  color: var(--t-base);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
+  transition: border-color 0.2s ease, background 0.2s ease;
+
+  svg { width: 19px; height: 19px; flex: 0 0 auto; }
+  &:hover { color: var(--t-base); border-color: var(--primary); background: var(--primary-soft); }
+}
+
+.auth-link {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+
+  &:hover { color: var(--primary-dark); }
+}
+
+.auth-switch {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  text-align: center;
+  border-top: 1px solid var(--border-soft);
+  color: var(--t-muted);
+  font-size: 0.9rem;
+}
+
+.auth-title {
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 700;
+  color: var(--t-base);
+}
+
+.auth-subtitle {
+  margin: 0.35rem 0 0;
+  color: var(--t-muted);
+  font-size: 0.95rem;
+}
+
+.auth-header {
+  text-align: center;
+  padding: 0 1.5rem 1.5rem;
+}
+
+.auth-logo {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  color: #fff;
+  box-shadow: 0 8px 20px color-mix(in oklab, var(--primary) 35%, transparent);
+}
+
+// Botón de tema y enlace "volver" del layout de auth (no carga _shell.scss)
+.auth-main .icon-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.6rem;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--t-muted);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+
+  svg { width: 16px; height: 16px; }
+
+  &:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+  }
+}
+
+.brand-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--t-muted);
+  text-decoration: none;
+  transition: color 0.2s ease;
+
+  svg { width: 15px; height: 15px; }
+
+  &:hover { color: var(--primary); }
+}
+
+// Renovación deportiva de autenticación y estados de carga
+@import 'sports-refresh';
+
+// Login y registro: variante sin panel ilustrado, centrada a página completa.
+.auth-shell--centered {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  .auth-main {
+    width: 100%;
+    min-width: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-y: auto;
+  }
+
+  .auth-card {
+    width: 100%;
+    max-width: 440px;
+    margin: auto;
+  }
+}
+
+.auth-google-last {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-google-last .auth-divider {
+  margin: 2px 0 14px;
+}

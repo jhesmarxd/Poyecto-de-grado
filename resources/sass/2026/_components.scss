@@ -1,0 +1,138 @@
+// ============================================================
+// CONTENIDO + COMPONENTES COMUNES — 2026 (portado de Adminator)
+// NOTA: .btn, .card y .table base se re-skinean desde _bootstrap.scss
+// para convivir con los componentes de Bootstrap. Aquí solo van las
+// clases propias del template (hero, grid, card-head, tag…).
+// ============================================================
+
+.content { padding: 32px 32px 24px; width: 100%; }
+
+// ---------- Hero ----------
+.hero {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: 32px; margin-bottom: 28px;
+  animation: rise-in 600ms cubic-bezier(.2,.7,.2,1) both;
+}
+.hero-text .eyebrow { display: block; margin-bottom: 10px; }
+.hero-title {
+  font-family: 'Inter Tight', 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: clamp(28px, 3.2vw, 36px);
+  line-height: 1.15;
+  letter-spacing: -0.028em;
+  color: var(--t-base);
+  margin: 0 0 8px;
+}
+.hero-title .accent { color: var(--primary); }
+.hero-sub { font-size: 14px; color: var(--t-muted); max-width: 60ch; line-height: 1.6; }
+.hero-sub strong { color: var(--success); font-weight: 600; }
+.hero-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+// ---------- Variantes de botón propias (clases btn--*) ----------
+// Se usan junto a .btn de Bootstrap; _bootstrap.scss re-skinea .btn.
+.btn--ghost { color: var(--t-base); border-color: var(--border); background: var(--bg-card); }
+.btn--ghost:hover { border-color: var(--t-light); box-shadow: var(--shadow-sm); }
+.btn--primary { background: var(--primary); color: #fff; box-shadow: 0 1px 2px var(--primary-ring); }
+.btn--primary:hover { background: var(--primary-dark); }
+
+// ---------- Card: encabezado interno (head/title/action) ----------
+.card-head {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  padding: 0 0 16px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-soft);
+  gap: 16px;
+}
+.card > .card-head {
+  padding: 20px 20px 16px;
+  margin-bottom: 0;
+}
+.card-head > * { min-width: 0; }
+.card-head > .badge,
+.card-head > .btn,
+.card-head > .card-action { flex-shrink: 0; }
+.card-title-wrap { min-width: 0; overflow-wrap: anywhere; }
+.card-title-wrap .eyebrow { display: block; margin-bottom: 4px; }
+.card-title {
+  font-family: 'Inter Tight', 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  color: var(--t-base);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.card-action {
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 600;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: color 180ms;
+}
+.card-action:hover { color: var(--primary-dark); }
+.card-action svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2.2; fill: none; }
+
+// ---------- Pie de card ----------
+.card-foot {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border-soft);
+  color: var(--t-muted);
+}
+
+// ---------- Grid genérico de 12 columnas ----------
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 20px;
+  animation: rise-in 600ms cubic-bezier(.2,.7,.2,1) both;
+  animation-delay: 260ms;
+}
+.grid > * { min-width: 0; }
+.grid > [class*="col-"] {
+  width: 100%;
+  max-width: 100%;
+}
+.grid > .card { padding: 20px; }
+.grid > .card > .card-head {
+  padding: 0 0 16px;
+  margin-bottom: 20px;
+}
+.grid > .card > .card-body { padding: 0; }
+.grid > .col-1  { grid-column: span 1; }
+.grid > .col-2  { grid-column: span 2; }
+.grid > .col-3  { grid-column: span 3; }
+.grid > .col-4  { grid-column: span 4; }
+.grid > .col-5  { grid-column: span 5; }
+.grid > .col-6  { grid-column: span 6; }
+.grid > .col-7  { grid-column: span 7; }
+.grid > .col-8  { grid-column: span 8; }
+.grid > .col-9  { grid-column: span 9; }
+.grid > .col-10 { grid-column: span 10; }
+.grid > .col-11 { grid-column: span 11; }
+.grid > .col-12 { grid-column: span 12; }
+
+// ---------- Contenedor con scroll horizontal ----------
+.table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-scroll::-webkit-scrollbar { height: 4px; }
+.table-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+// ---------- Contenedor ancho para páginas públicas ----------
+.container-wide { max-width: 1200px; margin: 0 auto; padding: 0 24px; width: 100%; }
+
+// ---------- Etiquetas (tag) ----------
+.tag {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  display: inline-flex; align-items: center;
+  line-height: 1;
+}
+.tag.t-new       { background: var(--purple-soft);  color: var(--purple); }
+.tag.t-used      { background: var(--orange-soft);  color: var(--orange); }
+.tag.t-old       { background: var(--warning-soft); color: var(--warning); }
+.tag.t-unavail   { background: var(--danger-soft);  color: var(--danger); }
+.tag.t-active    { background: var(--success-soft); color: var(--success); }
+.tag.t-info      { background: var(--info-soft);    color: var(--info); }

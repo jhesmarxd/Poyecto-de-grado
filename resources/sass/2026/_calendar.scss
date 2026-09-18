@@ -1,0 +1,221 @@
+// ============================================================
+// CALENDARIO (mini-calendario + riel) — 2026 (portado de Adminator)
+// El calendario principal usa FullCalendar v6 (ver _fullcalendar.scss).
+// ============================================================
+
+.cal-shell {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 20px;
+  animation: rise-in 600ms cubic-bezier(.2,.7,.2,1) both;
+  animation-delay: 80ms;
+}
+
+.cal-rail { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+.cal-quickadd {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--primary); color: #fff;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 13px; font-weight: 600;
+  box-shadow: 0 2px 6px -1px var(--primary-ring);
+  transition: background 180ms;
+}
+.cal-quickadd:hover { background: var(--primary-dark); }
+.cal-quickadd svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+.cal-rail-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: var(--shadow-card);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.cal-rail-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
+}
+.cal-rail-title {
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--t-base);
+  letter-spacing: -0.01em;
+}
+
+// Mini calendario
+.mini-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+.mini-cal-wd {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--t-light);
+  text-align: center;
+  padding: 4px 0 6px;
+  letter-spacing: 0.06em;
+}
+.mini-cal-day {
+  aspect-ratio: 1;
+  display: grid; place-items: center;
+  font-size: 11.5px;
+  color: var(--t-base);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+  position: relative;
+}
+.mini-cal-day:hover { background: var(--bg-hover); }
+.mini-cal-day.is-other { color: var(--t-light); }
+.mini-cal-day.is-today {
+  background: var(--primary); color: #fff; font-weight: 700;
+}
+.mini-cal-day.has-event::after {
+  content: '';
+  position: absolute;
+  bottom: 3px; left: 50%;
+  transform: translateX(-50%);
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+.mini-cal-day.is-today.has-event::after { background: #fff; }
+
+// Próximos
+.upc-list { display: flex; flex-direction: column; }
+.upc-item {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid var(--border-soft);
+  align-items: center;
+}
+.upc-item:first-child { border-top: 0; padding-top: 4px; }
+.upc-date {
+  text-align: center;
+  line-height: 1.05;
+  padding: 6px 0;
+  border-radius: 8px;
+  background: var(--bg-muted);
+}
+.upc-date .day {
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--t-base);
+  letter-spacing: -0.022em;
+}
+.upc-date .mo {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--t-light);
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+  display: block;
+  text-transform: uppercase;
+}
+.upc-date.is-today { background: var(--primary-soft); }
+.upc-date.is-today .day { color: var(--primary); }
+.upc-date.is-today .mo { color: var(--primary); }
+
+.upc-meta { min-width: 0; line-height: 1.35; }
+.upc-title {
+  font-size: 13px;
+  color: var(--t-base);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.upc-time {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11.5px;
+  color: var(--t-muted);
+  margin-top: 3px;
+}
+.upc-time .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+// Contenedor del calendario principal
+.cal-main {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.cal-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.cal-toolbar-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.cal-month {
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--t-base);
+  letter-spacing: -0.022em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.cal-month .yr { color: var(--t-light); font-weight: 500; margin-left: 4px; }
+
+.cal-nav { display: flex; align-items: center; gap: 4px; }
+.cal-nav-btn {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  border-radius: 7px;
+  color: var(--t-muted);
+  transition: background 160ms, color 160ms;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+}
+.cal-nav-btn:hover { background: var(--bg-hover); color: var(--t-base); border-color: var(--t-light); }
+.cal-nav-btn svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; fill: none; }
+.cal-today-btn {
+  padding: 0 12px; height: 30px;
+  font-size: 12px; font-weight: 600;
+  color: var(--t-base);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg-card);
+  transition: border-color 160ms, background 160ms;
+}
+.cal-today-btn:hover { background: var(--bg-hover); border-color: var(--t-light); }
+
+.cal-views {
+  display: flex;
+  background: var(--bg-muted);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+.cal-view-tab {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--t-muted);
+  border-radius: 6px;
+  transition: background 160ms, color 160ms, box-shadow 160ms;
+}
+.cal-view-tab:hover { color: var(--t-base); }
+.cal-view-tab.is-active {
+  background: var(--bg-card);
+  color: var(--t-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.cal-toolbar-right { display: flex; align-items: center; gap: 8px; }

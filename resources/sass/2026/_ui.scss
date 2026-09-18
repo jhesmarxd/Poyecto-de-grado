@@ -1,0 +1,176 @@
+// ============================================================
+// ELEMENTOS UI — 2026 (portado de Adminator 2026)
+// NOTA: .alert, .badge, .progress, .btn-group, .accordion y
+// .modal-* de Bootstrap se re-skinean en _bootstrap.scss para
+// no romper la maquetación existente.
+// ============================================================
+
+// Variantes de botón (se aplican junto a .btn de Bootstrap)
+.btn--secondary {
+  background: var(--bg-muted);
+  color: var(--t-base);
+  border-color: var(--border);
+}
+.btn--secondary:hover { background: var(--bg-hover); border-color: var(--t-light); }
+
+.btn--success { background: var(--success); color: #fff; }
+.btn--success:hover { background: color-mix(in oklab, var(--success) 90%, black); }
+.btn--danger  { background: var(--danger); color: #fff; }
+.btn--danger:hover { background: color-mix(in oklab, var(--danger) 90%, black); }
+.btn--warning { background: var(--warning); color: #fff; }
+.btn--warning:hover { background: color-mix(in oklab, var(--warning) 90%, black); }
+.btn--info    { background: var(--info); color: #fff; }
+.btn--info:hover { background: color-mix(in oklab, var(--info) 90%, black); }
+
+.btn--soft-primary { background: var(--primary-soft); color: var(--primary); }
+.btn--soft-primary:hover { background: color-mix(in oklab, var(--primary-soft) 80%, var(--primary) 8%); }
+.btn--soft-success { background: var(--success-soft); color: var(--success); }
+.btn--soft-danger  { background: var(--danger-soft);  color: var(--danger); }
+.btn--soft-warning { background: var(--warning-soft); color: var(--warning); }
+.btn--soft-info    { background: var(--info-soft);    color: var(--info); }
+
+.btn--outline-primary { background: transparent; color: var(--primary); border-color: var(--primary); }
+.btn--outline-primary:hover { background: var(--primary-soft); }
+.btn--outline-danger  { background: transparent; color: var(--danger); border-color: var(--danger); }
+.btn--outline-danger:hover { background: var(--danger-soft); }
+.btn--outline-success { background: transparent; color: var(--success); border-color: var(--success); }
+.btn--outline-success:hover { background: var(--success-soft); }
+
+.btn--lg { padding: 12px 18px; font-size: 14px; }
+.btn--sm { padding: 6px 10px; font-size: 11.5px; }
+.btn--icon { padding: 9px; }
+.btn--icon svg { margin: 0; }
+
+// ---------- Spinner ----------
+.spinner {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2.5px solid var(--bg-muted);
+  border-top-color: var(--primary);
+  animation: spin 700ms linear infinite;
+  display: inline-block;
+}
+.spinner.sm { width: 14px; height: 14px; border-width: 2px; }
+.spinner.lg { width: 36px; height: 36px; border-width: 3px; }
+
+// ---------- Tabs ----------
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 18px;
+}
+.tab {
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--t-muted);
+  border-bottom: 2px solid transparent;
+  transition: color 160ms, border-color 160ms;
+  position: relative;
+  top: 1px;
+  cursor: pointer;
+}
+.tab:hover { color: var(--t-base); }
+.tab.is-active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+.tab .badge { margin-left: 6px; }
+
+.tabs.pills {
+  border-bottom: 0;
+  background: var(--bg-muted);
+  border-radius: 9px;
+  padding: 3px;
+  display: inline-flex;
+}
+.tabs.pills .tab {
+  border-radius: 7px;
+  border-bottom: 0;
+  top: 0;
+  padding: 7px 12px;
+  font-size: 12.5px;
+}
+.tabs.pills .tab.is-active {
+  background: var(--bg-card);
+  color: var(--t-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.tab-panel { display: none; }
+.tab-panel.is-active { display: block; animation: rise-in 320ms ease both; }
+
+// ---------- Popover estático ----------
+.popover-demo {
+  position: relative;
+  display: inline-block;
+}
+.popover-demo .pop {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--t-base);
+  color: var(--bg-card);
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  box-shadow: var(--shadow-lg);
+}
+.popover-demo .pop::after {
+  content: '';
+  position: absolute;
+  top: 100%; left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--t-base);
+}
+
+// ---------- Grupo de avatares ----------
+.avatar-group {
+  display: inline-flex;
+  align-items: center;
+}
+.avatar-group .av {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 2px solid var(--bg-card);
+  margin-left: -8px;
+  flex-shrink: 0;
+}
+.avatar-group .av:first-child { margin-left: 0; }
+.avatar-group .av.more {
+  background: var(--bg-muted);
+  color: var(--t-muted);
+  font-size: 10.5px;
+}
+
+// ---------- Encabezado de sección ----------
+.section-h {
+  display: flex; align-items: baseline; gap: 12px;
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--t-base);
+  letter-spacing: -0.012em;
+  margin: 0 0 14px;
+}
+.section-h .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--t-light);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+
+.demo-row {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+}

@@ -1,0 +1,211 @@
+// ============================================================
+// RESPONSIVE — 2026 (portado de Adminator 2026)
+// ============================================================
+
+// Auth: colapsar el panel de marca cuando ya no cabe la pantalla dividida
+@media (max-width: 900px) {
+  .auth-shell { grid-template-columns: 1fr; }
+  .auth-aside { display: none; }
+}
+
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 1100px) {
+  .shell { grid-template-columns: 72px 1fr; }
+  .d-sidebar {
+    padding: 20px 10px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 20;
+  }
+  .brand-text, .brand-tag, .nav-label, .nav-link > span:not(.nav-badge), .nav-link .nav-badge,
+  .workspace-text, .workspace-chev, .nav-link .chev { display: none; }
+  .brand { justify-content: center; padding: 0 0 18px; }
+  .nav-link { justify-content: center; padding: 10px; }
+  .nav-link.is-active::before { left: -10px; }
+  .workspace { justify-content: center; padding: 6px; }
+  .grid > .col-1, .grid > .col-2, .grid > .col-3, .grid > .col-4,
+  .grid > .col-5, .grid > .col-6, .grid > .col-7, .grid > .col-8,
+  .grid > .col-9, .grid > .col-10, .grid > .col-11 { grid-column: span 12; }
+
+  // Flyout del submenú en modo rail (posicionado por JS como fixed)
+  .nav-submenu {
+    position: fixed;
+    left: 82px;
+    top: 0;
+    width: 200px;
+    max-height: 0;
+    margin-left: 0;
+    padding: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    z-index: 50;
+    transition: opacity 180ms ease, visibility 180ms;
+  }
+  .nav-submenu::before { display: none; }
+  .nav-item-group.is-open .nav-submenu {
+    max-height: 400px;
+    padding: 6px 0;
+    opacity: 1;
+    visibility: visible;
+  }
+  .nav-submenu a { padding: 8px 14px; font-size: 13px; border-radius: 6px; margin: 0 6px; }
+  .nav-submenu a:hover { padding-left: 14px; }
+
+  .chat-shell { grid-template-columns: 240px 1fr; }
+}
+
+@media (max-width: 720px) {
+  // Shell: la sidebar se vuelve drawer off-canvas
+  .shell { display: block; }
+  .d-sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 280px;
+    height: 100vh;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 240ms cubic-bezier(.2,.7,.2,1);
+    box-shadow: 0 12px 40px -8px rgb(0 0 0 / 0.4);
+    padding: 22px 16px 18px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .brand-text, .brand-tag, .nav-label, .nav-link > span:not(.nav-badge), .nav-link .nav-badge,
+  .workspace-text, .workspace-chev, .nav-submenu, .nav-link .chev { display: revert; }
+  .brand { justify-content: flex-start; padding: 4px 10px 20px; }
+  .nav-link { justify-content: flex-start; padding: 9px 12px; }
+  .workspace { justify-content: flex-start; padding: 6px 10px; }
+
+  // Revertir el flyout del submenú a acordeón inline
+  .nav-item-group { position: static; }
+  .nav-submenu {
+    position: static;
+    left: auto; top: auto;
+    width: auto;
+    margin-left: 20px;
+    padding: 0 0 0 14px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    opacity: 1;
+    visibility: visible;
+    max-height: 0;
+    transition: max-height 280ms cubic-bezier(.4,0,.2,1);
+  }
+  .nav-submenu::before { display: block; }
+  .nav-item-group.is-open .nav-submenu {
+    max-height: 400px;
+    padding: 4px 0 6px 14px;
+    opacity: 1;
+    visibility: visible;
+  }
+  .nav-submenu a { margin: 0; padding: 7px 10px; font-size: 12.5px; border-radius: 6px; }
+  .nav-submenu a:hover { padding-left: 13px; }
+
+  body.has-drawer-open .d-sidebar { transform: translateX(0); }
+  body.has-drawer-open { overflow: hidden; }
+
+  .hamburger { display: inline-flex; }
+
+  // Topbar compacto
+  .d-topbar { padding: 0 12px; }
+  .topbar-actions { gap: 2px; }
+
+  .crumbs { gap: 6px; min-width: 0; flex: 1; overflow: hidden; }
+  .crumbs > span:not(.current), .crumbs .sep { display: none; }
+  .crumbs .current { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .avatar { margin-left: 2px; }
+
+  // Dropdowns sin desbordarse
+  .dd-menu {
+    min-width: 0;
+    width: calc(100vw - 16px);
+    max-width: 360px;
+    right: -8px;
+  }
+  .dd-menu.dd-profile {
+    width: calc(100vw - 16px);
+    max-width: 280px;
+  }
+
+  // Contenido / hero / footer
+  .content { padding: 20px 16px 16px; }
+  .d-footer { padding: 20px 16px; flex-direction: column; gap: 10px; align-items: flex-start; }
+  .hero { flex-direction: column; align-items: flex-start; gap: 20px; }
+  .hero-actions { flex-wrap: wrap; }
+
+  .grid { gap: 16px; }
+
+  // Dashboard
+  .kpi-grid { grid-template-columns: 1fr; }
+
+  .grid > .card { padding: 18px; }
+  .card > .card-head { padding: 16px; }
+  .grid > .card > .card-head { padding: 0 0 14px; margin-bottom: 16px; }
+  .card-head { flex-wrap: wrap; gap: 10px; }
+
+  // Tablas
+  .data-toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
+  .data-toolbar-left, .data-toolbar-right { min-width: 0; flex-wrap: wrap; }
+  .data-foot { flex-direction: column; gap: 12px; align-items: flex-start; }
+
+  // Chat
+  .chat-shell {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+  .chat-rail {
+    display: flex;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-soft);
+    max-height: 260px;
+  }
+  .chat-pane { overflow: visible; }
+  .chat-pane-head { padding: 12px 16px; }
+  .chat-thread {
+    flex: 0 0 auto;
+    overflow: visible;
+    padding: 16px;
+  }
+  .chat-composer { padding: 12px 16px 16px; }
+
+  // Calendario
+  .cal-shell { grid-template-columns: 1fr; }
+  .cal-toolbar { flex-wrap: wrap; gap: 10px; padding: 14px; }
+  .cal-toolbar-left { width: 100%; justify-content: space-between; }
+  .cal-views { order: 3; }
+
+  // Auth
+  .auth-main { padding: 24px 20px; }
+}
+
+@media (max-width: 480px) {
+  .form-actions { flex-direction: column; align-items: stretch; }
+  .form-actions .btn { width: 100%; justify-content: center; }
+  .form-actions .spacer { display: none; }
+}
+
+// Páginas públicas: topbar se compacta en móvil
+@media (max-width: 720px) {
+  .public-topbar { padding: 0 16px; gap: 10px; }
+  .public-nav { order: 3; width: 100%; justify-content: flex-start; gap: 2px; overflow-x: auto; }
+  .public-topbar { flex-wrap: wrap; height: auto; padding: 10px 16px 8px; }
+  .public-actions { gap: 4px; }
+  .public-actions .btn { padding: 7px 10px; font-size: 12px; }
+  .public-footer { flex-direction: column; gap: 8px; align-items: flex-start; padding: 20px 16px; }
+}
+
+@media (max-width: 480px) {
+  .public-brand-name { display: none; }
+}

@@ -1,0 +1,24 @@
+// ============================================================
+// SKIN 2026 — Adminator sobre Bootstrap 5 (sistema-wally)
+// Importa los partials del skin. Debe cargarse DESPUÉS de
+// Bootstrap y de _variables.scss para que los tokens ganen.
+// ============================================================
+
+@import '2026/tokens';
+@import '2026/base';
+@import '2026/animations';
+@import '2026/shell';
+@import '2026/dropdowns';
+@import '2026/components';
+@import '2026/forms';
+@import '2026/ui';
+@import '2026/data';
+@import '2026/charts';
+@import '2026/dashboard';
+@import '2026/calendar';
+@import '2026/reservation-countdown';
+@import '2026/notifications';
+@import '2026/chat';
+@import '2026/fullcalendar';
+@import '2026/bootstrap';
+@import '2026/responsive';

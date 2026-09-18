@@ -1,0 +1,35 @@
+// ============================================================
+// BASE — 2026 (portado de Adminator 2026, adaptado a convivir
+// con Bootstrap Reboot: no reseteamos a/button/ul para no
+// romper los componentes de Bootstrap).
+// Las fuentes se cargan por <link> en cada layout (no @import).
+// ============================================================
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  font-weight: 400;
+  background: var(--bg-body);
+  color: var(--t-base);
+  font-size: 14px;
+  line-height: 1.55;
+  letter-spacing: -0.003em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background-color 280ms ease, color 280ms ease;
+}
+::selection { background: var(--primary); color: #fff; }
+
+.mono { font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace; }
+
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--t-light);
+  font-weight: 500;
+}
