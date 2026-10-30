@@ -9,6 +9,4 @@ RUN npm install && npm run build
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -s -i -e "s/80/\${PORT}/" /etc/apache2/ports.conf
-RUN sed -s -i -e "s/80/\${PORT}/" /etc/apache2/sites-available/*.conf
-CMD php artisan config:cache && php artisan migrate --force && apache2-foreground
+CMD sed -i "s/80/$PORT/g" /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf && php artisan config:cache && php artisan migrate --force && apache2-foreground
