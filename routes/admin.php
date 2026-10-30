@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\Admin\AjusteController;
 use App\Http\Controllers\Admin\BalonController as AdminBalonController;
 use App\Http\Controllers\Admin\CanchaController as AdminCanchaController;
 use App\Http\Controllers\Admin\ChatbotMetricasController;
+use App\Http\Controllers\Admin\ConfiguracionReservaController;
 use App\Http\Controllers\Admin\ConversacionController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\GoogleCalendarController;
@@ -89,21 +89,20 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::delete('/canchas/{cancha}/horarios/{horario}', [HorarioController::class, 'destroy'])->name('destroy');
     });
 
-    // Personalización visual y horario informativo del sitio
-    Route::prefix('admin/ajustes')->name('admin.ajustes.')->group(function () {
-        Route::get('/', [AjusteController::class, 'index'])->name('index');
-        Route::put('/', [AjusteController::class, 'update'])->name('update');
+    Route::prefix('admin/configuracion-reservas')->name('admin.configuracion-reservas.')->group(function () {
+        Route::get('/', [ConfiguracionReservaController::class, 'index'])->name('index');
+        Route::post('/previsualizar', [ConfiguracionReservaController::class, 'previewConfiguracion'])->name('preview');
+        Route::post('/excepciones/previsualizar', [ConfiguracionReservaController::class, 'previewExcepcion'])->name('exceptions.preview');
+        Route::get('/cambios/{cambio}/revisar', [ConfiguracionReservaController::class, 'review'])->name('review');
+        Route::post('/cambios/{cambio}/aplicar', [ConfiguracionReservaController::class, 'apply'])->name('apply');
+        Route::post('/cambios/{cambio}/descartar', [ConfiguracionReservaController::class, 'cancel'])->name('cancel');
+        Route::post('/afectadas/{afectada}/cancelar', [ConfiguracionReservaController::class, 'cancelarReserva'])->name('affected.cancel');
+        Route::post('/afectadas/{afectada}/reprogramar', [ConfiguracionReservaController::class, 'reprogramarReserva'])->name('affected.reschedule');
     });
 
-    // Integración empresarial con Google Calendar
+    // Flujo técnico de OAuth; no se expone como módulo visual.
     Route::prefix('admin/integraciones/google-calendar')->name('admin.integraciones.google-calendar.')->group(function () {
-        Route::get('/', [GoogleCalendarController::class, 'index'])->name('index');
         Route::get('/conectar', [GoogleCalendarController::class, 'connect'])->name('connect');
         Route::get('/callback', [GoogleCalendarController::class, 'callback'])->name('callback');
-        Route::put('/', [GoogleCalendarController::class, 'update'])->name('update');
-        Route::delete('/', [GoogleCalendarController::class, 'disconnect'])->name('disconnect');
-        Route::post('/sincronizar', [GoogleCalendarController::class, 'syncUpcoming'])->name('sync');
-        Route::post('/verificar', [GoogleCalendarController::class, 'verify'])->name('verify');
-        Route::post('/reservas/{reserva}/reintentar', [GoogleCalendarController::class, 'retry'])->name('retry');
     });
 });

@@ -47,7 +47,6 @@
                                 </p>
 
                                 <div class="mb-2">
-                                    <span class="badge bg-light text-dark border me-1">Capacidad: {{ $cancha->capacidad }}</span>
                                     <span class="badge bg-light text-dark border">
                                         {{ $cancha->horarios_count }} franjas horarias
                                     </span>

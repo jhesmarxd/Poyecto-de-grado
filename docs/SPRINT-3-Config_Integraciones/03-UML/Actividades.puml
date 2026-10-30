@@ -1,0 +1,56 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 3 - Diagrama de Actividades: Pipeline Configuración y Sync Google
+
+|Administrador|
+start
+:Accede a /admin/configuracion-reservas;
+:Modifica políticas (duraciones, anticipación, ventanas);
+:Clic "Revisar Cambios";
+|Sistema|
+:ConfiguracionReservaService.aplicarCambios();
+:Detecta reservas afectadas (fecha >= hoy, estado activo);
+:Muestra vista previa: X reprogramadas, Y canceladas;
+|Administrador|
+:Confirma "Aplicar Cambios";
+|Sistema|
+fork
+    :Para cada reserva afectada;
+    if (¿Nueva política permite?) then (sí)
+        :Marca 'afectada_por_configuracion';
+        :Registra en reservas_afectadas_configuracion;
+    else (no)
+        :Marca 'cancelada_por_complejo';
+        :Registra en reservas_afectadas_configuracion;
+    endif
+    :Dispara Job Notificación (async);
+    :Dispara Job Sync Google Calendar (async);
+fork again
+    :Job EnviarRecordatoriosReservas (diario, scheduler);
+    :Busca reservas confirmadas en 24h;
+    :Envía email/push recordatorio;
+fork again
+    :Job SyncReservationToGoogleCalendar (cola);
+    :Crea/Actualiza/Elimina evento en Google;
+    :Actualiza google_calendar_events (sync_status);
+end fork
+|Cliente|
+:Recibe notificación (email/push);
+:Ve reserva actualizada en "Mis Reservas";
+stop
+
+|Admin|
+start
+:Accede a /admin/google-calendar;
+:Clic "Conectar Google Calendar";
+|Sistema|
+:Redirige a OAuth Google (GoogleCalendarService.getAuthUrl);
+|Google|
+:Usuario autoriza aplicación;
+|Sistema|
+:Callback → Guarda tokens en google_calendar_connections;
+:Habilita sync automático;
+stop
+
+@enduml

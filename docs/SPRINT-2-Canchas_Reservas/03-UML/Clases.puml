@@ -1,0 +1,44 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 2 - Diagrama de Clases: Canchas, Horarios, Reservas y Balones
+
+$Model(Cancha, "Cancha\n- id: BigInteger\n- nombre: String\n- descripcion: Text\n- ubicacion: String\n- precio_por_hora: Decimal\n- estado: Enum\n- imagen: String\n- color_malla: String\n- altura_malla: String\n- tipo_piso: String\n- tipo_recinto: String\n\n+ horarios(): HasMany\n+ reservas(): HasMany\n+ cierres(): HasMany\n+ scopeDisponibles()\n+ estaDisponible(): Bool\n+ horariosDisponiblesPara(fecha): Collection\n+ imagenUrl(): String\n+ esCerrada(): Bool")
+
+$Model(Horario, "Horario\n- id: BigInteger\n- cancha_id: BigInteger\n- dia_semana: TinyInteger\n- hora_inicio: Time\n- hora_fin: Time\n- disponible: Boolean\n- vigente_desde: Date\n- vigente_hasta: Date\n\n+ cancha(): BelongsTo")
+
+$Model(Reserva, "Reserva\n- id: BigInteger\n- user_id: BigInteger\n- reprogramada_desde_id: BigInteger\n- cancha_id: BigInteger\n- horario_id: BigInteger\n- fecha: Date\n- hora_inicio_reserva: Time\n- hora_fin_reserva: Time\n- duracion_minutos: Integer\n- monto_total: Decimal\n- tipo_balon: Enum\n- balon_id: BigInteger\n- estado: Enum\n- observaciones: Text\n- check_in_at: DateTime\n- check_out_at: DateTime\n\n+ usuario(): BelongsTo\n+ cancha(): BelongsTo\n+ horario(): BelongsTo\n+ balon(): BelongsTo\n+ googleCalendarEvent(): HasOne\n+ scopeActivas()\n+ scopeParaFecha()\n+ scopeDeCanchaEnFecha()\n+ estaCancelada(): Bool\n+ esCancelablePorCliente(): Bool\n+ iniciaEn(): Carbon\n+ finalizaEn(): Carbon\n+ calcularMonto(): Float\n+ estadoLabel(): String\n+ estadoBadge(): String\n+ balonLabel(): String")
+
+$Model(Balon, "Balon\n- id: BigInteger\n- tipo: Enum\n- marca: String\n- modelo: String\n- precio_por_hora: Decimal\n- imagen: String\n- stock: Integer\n- activo: Boolean\n\n+ marcaModelo(): String")
+
+$Service(ReservaService, "ReservaService\n+ crearReserva(User, array): Reserva\n+ cancelarReserva(Reserva): void\n+ periodoOcupado(): Bool\n+ balonOcupado(): Bool\n+ balonesOcupados(): array\n+ registrarCheckIn(): void\n+ registrarCheckOut(): void\n+ reservasDelUsuario(): Collection\n+ proximaReservaConfirmada(): Reserva\n+ cambiarEstado(): void")
+
+$Service(DisponibilidadService, "DisponibilidadService\n+ obtenerDisponibilidad(): Array\n+ horariosLibres(): Collection")
+
+$Service(PoliticaReservasService, "PoliticaReservasService\n+ validarRangoOperativo(): Resultado\n+ fechaValida(): Bool\n+ configuracion(): ConfiguracionReserva\n+ duracionesPermitidas(): Array")
+
+$Controller(ReservaController, "ReservaController\n+ crear(Request): View\n+ store(StoreReservaRequest): Redirect\n+ mis(Request): View\n+ eventos(CalendarEventsRequest): Json\n+ cancelar(Request, Reserva): Redirect")
+
+$Controller(RecepcionistaReservaController, "Recepcionista\\ReservaController\n+ index(): View\n+ hoy(): View\n+ create(): View\n+ checkIn(Reserva): Redirect\n+ checkOut(Reserva): Redirect")
+
+$Rule(SinSuperposicionHorario, "SinSuperposicionHorario\n+ passes(): Bool\n+ message(): String")
+
+Cancha "1" -- "0..*" Horario : tiene >
+Cancha "1" -- "0..*" Reserva : recibe >
+Cancha "1" -- "0..*" CierreCancha : cierra >
+Reserva "1" -- "1" Cancha : en >
+Reserva "1" -- "1" Horario : en >
+Reserva "1" -- "0..1" Balon : usa >
+Reserva "1" -- "1" User : de >
+ReservaService --> Reserva : crea/gestiona >
+ReservaService --> Cancha : consulta >
+ReservaService --> Horario : consulta >
+ReservaService --> Balon : consulta >
+ReservaService ..> PoliticaReservasService : usa >
+DisponibilidadService ..> PoliticaReservasService : usa >
+ReservaController --> ReservaService : usa >
+RecepcionistaReservaController --> ReservaService : usa >
+SinSuperposicionHorario --> Reserva : valida >
+
+$Legend
+@enduml

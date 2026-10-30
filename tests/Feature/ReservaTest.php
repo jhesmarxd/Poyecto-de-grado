@@ -1,11 +1,13 @@
 <?php
 
 namespace Tests\Feature;
+
 use App\Models\Balon;
 use App\Models\Cancha;
 use App\Models\Horario;
 use App\Models\Reserva;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -14,13 +16,27 @@ class ReservaTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 10, 5, 10, 0, 0, 'America/La_Paz'));
+        parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
+    }
+
     private function cliente(): User
     {
-        return User::factory()->create(['rol' => User::ROL_CLIENTE]);  }
+        return User::factory()->create(['rol' => User::ROL_CLIENTE]);
+    }
 
     private function admin(): User
     {
-        return User::factory()->create(['rol' => User::ROL_ADMIN]);}
+        return User::factory()->create(['rol' => User::ROL_ADMIN]);
+    }
 
     private function canchaConHorario(string $fecha): array
     {
@@ -305,7 +321,7 @@ class ReservaTest extends TestCase
         ]);
 
         // El índice único de la BD rechaza el duplicado
-        $this->expectException(\Illuminate\Database\QueryException::class);
+        $this->expectException(QueryException::class);
         Reserva::create([
             'user_id' => $usuario->id,
             'cancha_id' => $cancha->id,

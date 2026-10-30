@@ -1,0 +1,110 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class Reserva {
+    +id: bigint
+    +user_id: bigint
+    +cancha_id: bigint
+    +horario_id: bigint
+    +balon_id: bigint
+    +fecha: date
+    +hora_inicio_reserva: time
+    +hora_fin_reserva: time
+    +monto_total: decimal
+    +estado: enum
+    +origen: enum
+    +checkin_at: timestamp
+    +checkout_at: timestamp
+    +esConfirmada(): bool
+    +esCancelada(): bool
+    +estaActiva(): bool
+    +calcularTotal(): float
+}
+
+class ConfiguracionReserva {
+    +id: bigint
+    +minutos_tolerancia_checkin: int
+    +horas_anticipacion_minima: int
+    +dias_anticipacion_maxima: int
+    +limite_reservas_activas_por_cliente: int
+    +obtenerActual(): ConfiguracionReserva
+}
+
+class GoogleCalendarEvent {
+    +id: bigint
+    +reserva_id: bigint
+    +google_event_id: string
+    +sync_status: string
+}
+
+class ReservaController {
+    +index(): View
+    +create(): View
+    +store(Request): RedirectResponse
+    +show(Reserva): View
+    +cancelar(Reserva): RedirectResponse
+}
+
+class CheckinController {
+    +index(): View
+    +checkIn(Reserva): RedirectResponse
+    +checkOut(Reserva): RedirectResponse
+}
+
+class ReservaService {
+    +crearReserva(array, User): Reserva
+    +cancelarReserva(Reserva, User): bool
+    +periodoOcupado(int, string, string, string): bool
+    +balonOcupado(int, string, Horario, string): bool
+    +sincronizarGoogleCalendar(Reserva): void
+}
+
+class PoliticaReservasService {
+    +validarAnticipacionYLimites(User, string, string): bool
+    +puedeCancelar(Reserva): bool
+}
+
+class SyncReservationToGoogleCalendar {
+    +handle(): void
+}
+
+class User {
+    +id: bigint
+    +name: string
+    +email: string
+    +rol: string
+}
+
+class Cancha {
+    +id: bigint
+    +nombre: string
+    +precio_por_hora: decimal
+}
+
+class Horario {
+    +id: bigint
+    +cancha_id: bigint
+    +dia_semana: tinyint
+    +hora_inicio: time
+    +hora_fin: time
+}
+
+class Balon {
+    +id: bigint
+    +nombre: string
+    +precio_alquiler: decimal
+}
+
+Reserva "0..*" --> "1" User : cliente solicita
+Reserva "0..*" --> "1" Cancha : cancha reservada
+Reserva "0..*" --> "1" Horario : turno asignado
+Reserva "0..*" --> "0..1" Balon : balon alquilado
+Reserva "1" -- "0..1" GoogleCalendarEvent : sincroniza evento
+ReservaService ..> Reserva : gestiona transaccion
+ReservaService ..> PoliticaReservasService : valida reglas
+ReservaService ..> ConfiguracionReserva : consulta politicas
+ReservaService ..> SyncReservationToGoogleCalendar : despacha sincronizacion
+ReservaController ..> ReservaService : invoca creacion
+CheckinController ..> Reserva : actualiza ingreso/salida
+@enduml
+

@@ -1,35 +1,27 @@
 {{--
-    Mini-catálogo desplegable de balones.
+    Mini-catálogo de balones.
     Variables: $balones (colección), $version (string), $modo ('info'|'seleccion'),
-               $ocupados (array de ids reservados en ese día/hora), $cancha (solo en 'seleccion').
+               $ocupados (array de ids reservados en ese día/hora), $cancha (solo en 'seleccion'),
+               $vistaCompleta (muestra todas las categorías abiertas) y $compacto (tarjetas más pequeñas).
 --}}
 @php
     $modo = $modo ?? 'info';
     $ocupados = $ocupados ?? [];
+    $vistaCompleta = $vistaCompleta ?? false;
+    $compacto = $compacto ?? false;
     $economicos = $balones->where('tipo', \App\Models\Balon::TIPO_ECONOMICO)->values();
     $premiums = $balones->where('tipo', \App\Models\Balon::TIPO_PREMIUM)->values();
 @endphp
 
-<style>
-    .balon-pick { display: block; cursor: pointer; }
-    .balon-pick .balon-card { transition: border-color .15s ease, box-shadow .15s ease; border-width: 2px; }
-    .balon-pick input:checked ~ .balon-card {
-        border-color: var(--bs-success);
-        box-shadow: 0 0 0 3px rgba(var(--color-primario-rgb), .22);
-    }
-    .balon-pick input:disabled { cursor: not-allowed; }
-    .balon-pick input:disabled ~ .balon-card { opacity: .5; }
-    .balon-foto { position: relative; }
-</style>
-
-<div class="balones-section mt-5">
-    <div class="text-center mb-4">
-        <span class="badge rounded-pill px-3 py-2 fw-semibold"
-              style="background: rgba(var(--color-primario-rgb), 0.12); color: var(--color-primario)">Balones</span>
-        <h2 class="display-6 fw-bold mt-3 mb-2">Elige cómo quieres jugar</h2>
-        <p class="fs-5 text-muted mb-0">
+<div class="balones-section {{ $modo === 'seleccion' ? 'booking-ball-catalog' : '' }} {{ $vistaCompleta ? 'balones-section--full' : '' }}">
+    <div class="balones-section__head">
+        <span class="client-kicker"><i class="bi bi-dribbble" aria-hidden="true"></i> Balones del recinto</span>
+        <h3>{{ $modo === 'seleccion' ? '¿Prefieres usar uno de nuestros balones?' : 'Elige cómo quieres jugar' }}</h3>
+        <p>
             @if ($modo === 'seleccion')
-                Despliega cada sección y elige el balón exacto con el que jugarás. Si un balón ya está reservado en este horario, quedará marcado como no disponible.
+                Abre una categoría y selecciona un balón disponible.
+            @elseif ($vistaCompleta)
+                Revisa todos nuestros balones a simple vista y elige tu favorito.
             @else
                 Puedes traer tu propio balón (tarifa de cancha) o usar uno de nuestro catálogo.
             @endif
@@ -39,7 +31,7 @@
     @if ($balones->isEmpty())
         <p class="text-center text-muted">Pronto publicaremos los balones disponibles.</p>
     @else
-    <div class="accordion" id="balones-grid" data-version="{{ $version ?? '' }}">
+    <div class="{{ $vistaCompleta ? 'balones-catalog' : 'accordion' }}" id="balones-grid" data-version="{{ $version ?? '' }}">
         @foreach (['economico' => $economicos, 'premium' => $premiums] as $tipo => $lista)
             @if ($lista->isEmpty())
                 @continue
@@ -50,24 +42,35 @@
                     ? 'Balones económicos que presta la dueña'
                     : 'Balones premium (mejor calidad)';
             @endphp
-            <div class="accordion-item border-0 rounded-4 overflow-hidden mb-3 shadow-sm">
-                <h2 class="accordion-header" id="heading-{{ $clave }}">
-                    <button class="accordion-button collapsed fw-semibold" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#collapse-{{ $clave }}"
-                            aria-expanded="false" aria-controls="collapse-{{ $clave }}">
-                        <span class="me-2">{{ $titulo }}</span>
-                        <span class="badge rounded-pill text-bg-secondary">{{ $lista->count() }}</span>
-                    </button>
-                </h2>
-                <div id="collapse-{{ $clave }}" class="accordion-collapse collapse"
-                     data-bs-parent="#balones-grid" aria-labelledby="heading-{{ $clave }}">
-                    <div class="accordion-body">
-                        <div class="row g-4">
+            @if ($vistaCompleta)
+                <section class="balones-category" aria-labelledby="heading-{{ $clave }}">
+                    <header class="balones-category__header" id="heading-{{ $clave }}">
+                        <i class="bi {{ $tipo === 'economico' ? 'bi-circle' : 'bi-stars' }}" aria-hidden="true"></i>
+                        <span>{{ $titulo }}</span>
+                        <span class="balones-category__count">{{ $lista->count() }}</span>
+                    </header>
+                    <div class="balones-category__body">
+            @else
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-{{ $clave }}">
+                        <button class="accordion-button collapsed" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#collapse-{{ $clave }}"
+                                aria-expanded="false" aria-controls="collapse-{{ $clave }}">
+                            <i class="bi {{ $tipo === 'economico' ? 'bi-circle' : 'bi-stars' }}" aria-hidden="true"></i>
+                            <span>{{ $titulo }}</span>
+                            <span class="badge rounded-pill text-bg-secondary">{{ $lista->count() }}</span>
+                        </button>
+                    </h2>
+                    <div id="collapse-{{ $clave }}" class="accordion-collapse collapse"
+                         data-bs-parent="#balones-grid" aria-labelledby="heading-{{ $clave }}">
+                        <div class="accordion-body">
+            @endif
+                            <div class="row g-3 justify-content-center">
                             @foreach ($lista as $balon)
                                 @php($reservado = $modo === 'seleccion' && in_array($balon->id, $ocupados, true))
-                                <div class="col-md-6 col-lg-3">
+                                <div class="{{ $compacto ? 'col-12 col-sm-6 col-lg-4 col-xl-3' : 'col-md-6 col-xl-4' }}">
                                     @if ($modo === 'seleccion')
-                                        <label class="balon-pick h-100">
+                                        <label class="balon-pick ball-choice h-100">
                                             <input type="radio" class="visually-hidden" name="balon_seleccion"
                                                    value="{{ $balon->id }}"
                                                    data-precio="{{ (float) $balon->precio_por_hora }}"
@@ -81,10 +84,15 @@
                                     @endif
                                 </div>
                             @endforeach
+                            </div>
+            @if ($vistaCompleta)
+                    </div>
+                </section>
+            @else
                         </div>
                     </div>
                 </div>
-            </div>
+            @endif
         @endforeach
     </div>
     @endif

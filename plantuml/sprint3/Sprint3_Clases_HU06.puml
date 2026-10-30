@@ -1,0 +1,88 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class Conversacion {
+    +id: bigint
+    +user_id: bigint
+    +session_id: string
+    +ip_origen: string
+    +canal: string
+    +estado: string
+    +contexto: json
+    +mensajes(): HasMany
+    +ejecuciones(): HasMany
+    +contextoDe(string): mixed
+    +guardarContexto(string, mixed): void
+}
+
+class MensajeChatbot {
+    +id: bigint
+    +conversacion_id: bigint
+    +emisor: string
+    +mensaje: text
+    +intencion_detectada: string
+    +confianza: float
+    +tiempo_respuesta_ms: int
+    +conversacion(): BelongsTo
+}
+
+class ChatbotEjecucion {
+    +id: bigint
+    +conversacion_id: bigint
+    +mensaje_id: bigint
+    +proveedor: string
+    +modelo: string
+    +latencia_ms: int
+    +tokens_entrada: int
+    +tokens_salida: int
+    +costo_usd: decimal
+}
+
+class ChatbotController {
+    +responder(Request, GeminiNLPService): JsonResponse
+    +reiniciarSesion(Request): JsonResponse
+}
+
+class ChatbotService {
+    +responder(string, Conversacion, User): array
+    -consultarDisponibilidad(Conversacion, string): array
+    -bloqueoSeguridad(Conversacion): array
+}
+
+class DetectorIntencion {
+    +detectar(string): string
+    +normalizar(string): string
+}
+
+class ExtractorEntidades {
+    +extraer(string): array
+    +extraerFecha(string): string
+    +extraerHora(string): string
+}
+
+class PoliticaSeguridadChatbot {
+    +evaluar(string): string
+}
+
+class GeminiNLPService {
+    +detectIntent(string, string): array
+}
+
+class User {
+    +id: bigint
+    +name: string
+    +email: string
+}
+
+Conversacion "1" *-- "0..*" MensajeChatbot : contiene mensajes
+Conversacion "1" *-- "0..*" ChatbotEjecucion : audita llamadas IA
+MensajeChatbot "1" -- "0..1" ChatbotEjecucion : telemetria
+Conversacion "0..*" --> "0..1" User : vincula (opcional)
+ChatbotController ..> ChatbotService : delega logica conversacional
+ChatbotController ..> GeminiNLPService : consulta servicio externo
+ChatbotService ..> DetectorIntencion : clasifica intencion
+ChatbotService ..> ExtractorEntidades : extrae parametros
+ChatbotService ..> PoliticaSeguridadChatbot : filtra ataques
+ChatbotService ..> Conversacion : lee y actualiza contexto
+@enduml
+

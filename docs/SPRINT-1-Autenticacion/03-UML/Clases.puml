@@ -1,0 +1,28 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 1 - Diagrama de Clases: Autenticación y Usuarios
+
+$Model(User, "User\n- id: BigInteger\n- name: String\n- email: String\n- password: String\n- rol: Enum\n- email_verified_at: DateTime\n- remember_token: String\n\n+ esAdministrador(): Bool\n+ esRecepcionista(): Bool\n+ esCliente(): Bool\n+ scopeAdministradores()\n+ scopeRecepcionistas()\n+ scopeClientes()")
+
+$Model(SocialAccount, "SocialAccount\n- id: BigInteger\n- user_id: BigInteger\n- provider: String\n- provider_id: String\n- token: String\n- refresh_token: String\n- expires_at: DateTime\n\n+ user(): BelongsTo")
+
+$Controller(LoginController, "LoginController\n+ showLoginForm()\n+ login(Request)\n+ logout(Request)")
+$Controller(RegisterController, "RegisterController\n+ showRegistrationForm()\n+ register(Request)")
+$Controller(ProfileController, "ProfileController\n+ edit()\n+ update(Request)\n+ destroy(Request)")
+
+$Middleware(EnsureUserIsAdmin, "EnsureUserIsAdmin\n+ handle(Request, Closure)")
+$Middleware(EnsureUserIsRecepcionista, "EnsureUserIsRecepcionista\n+ handle(Request, Closure)")
+
+$Policy(UsuarioPolicy, "UsuarioPolicy\n+ viewAny(User): Bool\n+ view(User, User): Bool\n+ create(User): Bool\n+ update(User, User): Bool\n+ delete(User, User): Bool\n+ forceDelete(User, User): Bool")
+
+User "1" -- "0..*" SocialAccount : tiene >
+User "1" -- "1" UsuarioPolicy : autorizado por
+LoginController --> User : autentica
+RegisterController --> User : crea
+ProfileController --> User : actualiza
+EnsureUserIsAdmin --> User : verifica rol
+EnsureUserIsRecepcionista --> User : verifica rol
+
+$Legend
+@enduml

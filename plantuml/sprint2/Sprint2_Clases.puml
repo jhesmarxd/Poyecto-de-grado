@@ -1,0 +1,92 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class Cancha {
+    +id: bigint
+    +nombre: string
+    +descripcion: text
+    +precio_por_hora: decimal
+    +estado: string
+    +tipo_recinto: string
+    +imagen: string
+    +estaDisponible(): bool
+    +horarios(): HasMany
+    +cierres(): HasMany
+    +horariosDisponiblesPara(fecha): Collection
+    +imagenUrl(): string
+}
+
+class Horario {
+    +id: bigint
+    +cancha_id: bigint
+    +dia_semana: int
+    +hora_inicio: time
+    +hora_fin: time
+    +disponible: boolean
+    +vigente_desde: date
+    +vigente_hasta: date
+    +cancha(): BelongsTo
+    +estaDisponible(): bool
+}
+
+class CierreCancha {
+    +id: bigint
+    +cancha_id: bigint
+    +fecha: date
+    +motivo: string
+    +cancha(): BelongsTo
+}
+
+class Balon {
+    +id: bigint
+    +nombre: string
+    +codigo: string
+    +tipo: string
+    +precio_alquiler: decimal
+    +estado: string
+    +estaDisponible(): bool
+}
+
+class CanchaService {
+    +procesarDatos(array, Cancha): array
+    +eliminarCancha(Cancha): void
+    -subirImagen(UploadedFile, string): string
+    -eliminarImagenSiNoSeUsa(string, int): void
+}
+
+class DisponibilidadService {
+    +obtenerCanchasConDisponibilidad(string): Collection
+    +canchaEstaDisponibleEnHorario(int, string, string, string): bool
+    +obtenerFranjasHorariasLibres(Cancha, string): array
+}
+
+class AdminCanchaController {
+    +index(): View
+    +create(): View
+    +store(StoreCanchaRequest): RedirectResponse
+    +edit(Cancha): View
+    +update(UpdateCanchaRequest, Cancha): RedirectResponse
+    +destroy(Cancha): RedirectResponse
+}
+
+class AdminHorarioController {
+    +index(Request): View
+    +create(Cancha): View
+    +store(StoreHorarioRequest, Cancha): RedirectResponse
+    +storeBulk(Request, Cancha): RedirectResponse
+    +edit(Cancha, Horario): View
+    +update(UpdateHorarioRequest, Cancha, Horario): RedirectResponse
+    +destroy(Cancha, Horario): RedirectResponse
+    +storeCierre(Request, Cancha): RedirectResponse
+}
+
+Cancha "1" *-- "0..*" Horario : contiene
+Cancha "1" *-- "0..*" CierreCancha : registra
+AdminCanchaController ..> Cancha : gestiona
+AdminCanchaController ..> CanchaService : delega subida y borrado
+AdminHorarioController ..> Horario : administra franjas
+AdminHorarioController ..> CierreCancha : registra cierres
+DisponibilidadService ..> Cancha : evalúa
+DisponibilidadService ..> Horario : verifica
+DisponibilidadService ..> CierreCancha : filtra cierres
+@enduml

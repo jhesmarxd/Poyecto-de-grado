@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
@@ -14,7 +13,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // ── Administrador ──
-        User::updateOrCreate(
+        User::firstOrCreate(
             ['email' => 'admin@wally.com'],
             [
                 'name' => 'Carlos Mendoza',
@@ -26,7 +25,7 @@ class UserSeeder extends Seeder
         );
 
         // ── Recepcionista ──
-        User::updateOrCreate(
+        User::firstOrCreate(
             ['email' => 'recepcion@wally.com'],
             [
                 'name' => 'María Elena Torres',
@@ -50,7 +49,7 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($clientes as $cliente) {
-            User::updateOrCreate(
+            User::firstOrCreate(
                 ['email' => $cliente['email']],
                 [
                     'name' => $cliente['name'],

@@ -1,13 +1,15 @@
 @extends('layouts.app')
 
-@section('title', 'Panel operativo')
+@section('title', 'Dashboard')
 
 @section('content')
+    @php($nombreCorto = \Illuminate\Support\Str::before(Auth::user()->name, ' '))
+
     <div class="hero">
         <div class="hero-text">
-            <span class="eyebrow">Administración · Operación</span>
-            <h1 class="hero-title">Panel <span class="accent">operativo</span></h1>
-            <p class="hero-sub">Resumen de reservas, ingresos y ocupación de las canchas.</p>
+            <span class="eyebrow">Administración · Operacion</span>
+            <h1 class="hero-title">¡Hola, <span>{{ $nombreCorto }}</span>!</h1>
+            <p class="hero-sub">Bienvenido al panel de administración. Resumen de reservas, ingresos y ocupación de las canchas.</p>
         </div>
         <div class="hero-actions">
             <a href="{{ route('admin.reportes.index') }}" class="btn btn--primary">
@@ -90,7 +92,7 @@
             </div>
             <div class="kpi-value">{{ $metricas['ocupacion_hoy'] }}%</div>
             <div class="kpi-compare">
-                <span>de la capacidad</span>
+                <span>de las franjas habilitadas</span>
             </div>
         </div>
 

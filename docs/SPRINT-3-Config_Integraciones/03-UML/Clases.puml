@@ -1,0 +1,58 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 3 - Diagrama de Clases: Configuración, Google Calendar, Reportes, Jobs
+
+$Model(ConfiguracionReserva, "ConfiguracionReserva\n- id: BigInteger\n- clave: String\n- valor: JSON\n- descripcion: Text\n- tipo: String\n\n+ getValor(): Mixed\n+ setValor(valor): void")
+
+$Model(CierreCancha, "CierreCancha\n- id: BigInteger\n- cancha_id: BigInteger\n- fecha_inicio: Date\n- fecha_fin: Date\n- motivo: String\n- recurrente: Boolean\n- dia_semana: TinyInteger\n\n+ cancha(): BelongsTo\n+ esRecurrente(): Bool\n+ afectaFecha(fecha): Bool")
+
+$Model(ReservaAfectadaConfiguracion, "ReservaAfectadaConfiguracion\n- id: BigInteger\n- reserva_id: BigInteger\n- cambio_id: BigInteger\n- accion_tomada: Enum\n- estado_anterior: String\n- estado_nuevo: String\n\n+ reserva(): BelongsTo\n+ cambio(): BelongsTo")
+
+$Model(GoogleCalendarConnection, "GoogleCalendarConnection\n- id: BigInteger\n- calendar_id: String\n- enabled: Boolean\n- access_token: String\n- refresh_token: String\n- expires_at: DateTime\n\n+ isTokenExpired(): Bool\n+ refreshAccessToken(): void")
+
+$Model(GoogleCalendarEvent, "GoogleCalendarEvent\n- id: BigInteger\n- reserva_id: BigInteger\n- calendar_id: String\n- google_event_id: String\n- sync_status: Enum\n- last_error: Text\n- last_synced_at: DateTime\n\n+ reserva(): BelongsTo\n+ STATUS_PENDING\n+ STATUS_SYNCED\n+ STATUS_ERROR")
+
+$Model(Notification, "Notification (Polimórfico)\n- id: BigInteger\n- type: String\n- notifiable_type: String\n- notifiable_id: BigInteger\n- data: JSON\n- read_at: DateTime\n\n+ notifiable(): MorphTo")
+
+$Service(ConfiguracionReservaService, "ConfiguracionReservaService\n+ configuracion(): ConfiguracionReserva\n+ validarRangoOperativo(): Resultado\n+ aplicarCambios(array): Resultado\n+ detectarReservasAfectadas(): Collection\n+ reprogramarReservas(): void\n+ cancelarReservas(): void")
+
+$Service(GoogleCalendarService, "GoogleCalendarService\n+ createEvent(Reserva): String\n+ updateEvent(Reserva): Bool\n+ deleteEvent(String): Bool\n+ getAuthUrl(): String\n+ handleCallback(Request): Bool")
+
+$Service(ReservaCalendarService, "ReservaCalendarService\n+ paraCliente(User, inicio, fin, estado): Array\n+ paraAdmin(inicio, fin, filtros): Array\n+ paraRecepcionista(fecha): Array")
+
+$Service(EstadisticasService, "EstadisticasService\n+ ocupacionPorCancha(inicio, fin): Array\n+ ingresosPorPeriodo(inicio, fin): Array\n+ cancelacionesPorPeriodo(inicio, fin): Array\n+ reservasPorHora(): Array\n+ topClientes(): Array")
+
+$Service(ReporteService, "ReporteService\n+ generarOcupacion(inicio, fin): Array\n+ generarIngresos(inicio, fin): Array\n+ exportarExcel(data): String\n+ exportarPDF(data): String")
+
+$Job(SyncReservationToGoogleCalendar, "SyncReservationToGoogleCalendar\n+ handle(): void\n+ createEvent(Reserva): void\n+ updateEvent(Reserva): void\n+ deleteEvent(Reserva): void\n+ idempotencyKey(): String")
+
+$Job(EnviarRecordatoriosReservas, "EnviarRecordatoriosReservas\n+ handle(): void\n+ obtenerReservasProximas(): Collection\n+ enviarRecordatorio(Reserva): void")
+
+$Controller(AdminConfigController, "Admin\\ConfiguracionReservaController\n+ index(): View\n+ review(): View\n+ update(Request): Redirect")
+
+$Controller(AdminGoogleCalendarController, "Admin\\GoogleCalendarController\n+ connect(): Redirect\n+ callback(Request): Redirect\n+ disconnect(): Redirect\n+ sync(): Json")
+
+$Controller(AdminDashboardController, "Admin\\DashboardController\n+ index(): View")
+
+$Controller(AdminReporteController, "Admin\\ReporteController\n+ index(): View\n+ export(Request): Download")
+
+$Controller(DisponibilidadController, "DisponibilidadController\n+ index(): View\n+ eventos(Request): Json")
+
+$Controller(NotificationController, "NotificationController\n+ index(): View\n+ markAsRead(Notification): Redirect")
+
+ConfiguracionReservaService --> ConfiguracionReserva : gestiona >
+ConfiguracionReservaService --> CierreCancha : gestiona >
+ConfiguracionReservaService --> ReservaAfectadaConfiguracion : crea >
+ConfiguracionReservaService ..> ReservaService : usa >
+GoogleCalendarService --> GoogleCalendarConnection : usa >
+GoogleCalendarService --> GoogleCalendarEvent : crea/actualiza >
+SyncReservationToGoogleCalendar --> GoogleCalendarService : usa >
+SyncReservationToGoogleCalendar --> GoogleCalendarEvent : actualiza >
+EnviarRecordatoriosReservas --> Reserva : consulta >
+EnviarRecordatoriosReservas --> Notification : crea >
+EstadisticasService --> Reserva : consulta >
+ReporteService ..> EstadisticasService : usa >
+
+$Legend
+@enduml

@@ -1,0 +1,33 @@
+@startuml
+start
+:Administrador accede a /admin/canchas;
+:Sistema lista canchas con contador de horarios asociados;
+if (¿Qué operación de cancha desea realizar?) then (Crear Cancha)
+    :Selecciona "+ Nueva Cancha";
+    :Ingresa nombre, descripción, precio/hora y tipo de recinto;
+    :Adjunta imagen fotográfica de la cancha;
+    :Presiona "Guardar cancha";
+    :CanchaService procesa y almacena archivo en public/img/canchas;
+    :Persiste registro con estado disponible;
+    :Muestra mensaje de éxito;
+elseif (Editar Cancha) then
+    :Selecciona "Editar" en la cancha;
+    :Actualiza tarifa o tipo de recinto;
+    if (¿Adjuntó nueva imagen?) then (Sí)
+        :CanchaService elimina imagen anterior si no está en uso;
+        :Guarda nueva imagen;
+    endif
+    :Actualiza registro en base de datos;
+elseif (Gestionar Balones) then
+    :Accede a /admin/balones;
+    :Registra o actualiza balón (código, marca, tipo, tarifa);
+    :Actualiza disponibilidad de balones;
+else (Eliminar Cancha)
+    :Selecciona "Eliminar";
+    :Elimina horarios asociados en cascada;
+    :CanchaService elimina archivo de imagen huérfana;
+    :Retorna confirmación;
+endif
+:Recarga tabla de canchas;
+stop
+@enduml

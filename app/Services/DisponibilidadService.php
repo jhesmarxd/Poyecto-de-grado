@@ -6,6 +6,10 @@ use App\Models\Cancha;
 
 class DisponibilidadService
 {
+    public function __construct(
+        private readonly PoliticaReservasService $politica,
+    ) {}
+
     /**
      * Obtiene las canchas disponibles ordenadas por nombre.
      */
@@ -23,7 +27,7 @@ class DisponibilidadService
             return collect();
         }
 
-        return $cancha->horariosDisponiblesPara($fecha);
+        return $this->politica->horariosLibres($cancha, $fecha);
     }
 
     /**
@@ -31,6 +35,6 @@ class DisponibilidadService
      */
     public function esFechaValida(?string $fecha): bool
     {
-        return $fecha !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha) === 1;
+        return $this->politica->fechaValida($fecha);
     }
 }

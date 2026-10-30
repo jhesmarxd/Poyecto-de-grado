@@ -3,20 +3,22 @@
 @section('title', 'Mi Perfil')
 
 @section('content')
-    <div class="hero">
-        <div class="hero-text">
-            <span class="eyebrow">Cuenta · Perfil</span>
-            <h1 class="hero-title">Mi <span class="accent">perfil</span></h1>
-            <p class="hero-sub">Actualiza tus datos personales y contraseña.</p>
-        </div>
-    </div>
+    <div class="client-page client-profile-page">
+        <header class="client-page-header">
+            <div class="client-page-header__icon" aria-hidden="true"><i class="bi bi-person-circle"></i></div>
+            <div>
+                <span class="client-kicker">Tu cuenta</span>
+                <h1>Mi <span>perfil</span></h1>
+                <p>Revisa y actualiza tus datos personales de forma segura.</p>
+            </div>
+        </header>
 
-    <div class="grid">
-        <div class="card col-8">
+        <div class="client-profile-grid">
+        <div class="card client-profile-card">
             <div class="card-head">
                 <div class="card-title-wrap">
-                    <span class="eyebrow">Datos personales</span>
-                    <h3 class="card-title">Información de la cuenta</h3>
+                    <span class="client-card-icon" aria-hidden="true"><i class="bi bi-person-vcard"></i></span>
+                    <div><span class="client-kicker">Datos personales</span><h2 class="card-title">Información de la cuenta</h2></div>
                 </div>
             </div>
 
@@ -26,7 +28,7 @@
 
                 <div class="form-grid">
                     <div class="field">
-                        <label for="name" class="field-label">Nombre completo</label>
+                        <label for="name" class="field-label"><i class="bi bi-person" aria-hidden="true"></i> Nombre completo</label>
                         <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name', Auth::user()->name) }}" required autofocus>
                         @error('name')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
@@ -34,13 +36,13 @@
                     </div>
 
                     <div class="field">
-                        <label for="email" class="field-label">Correo electrónico</label>
+                        <label for="email" class="field-label"><i class="bi bi-envelope" aria-hidden="true"></i> Correo electrónico</label>
                         <input id="email" type="email" class="form-control" value="{{ Auth::user()->email }}" disabled>
                         <span class="field-help">El correo no se puede cambiar desde el perfil.</span>
                     </div>
 
                     <div class="field">
-                        <label for="telefono" class="field-label">Teléfono</label>
+                        <label for="telefono" class="field-label"><i class="bi bi-telephone" aria-hidden="true"></i> Teléfono</label>
                         <input id="telefono" type="text" class="form-control @error('telefono') is-invalid @enderror" name="telefono" value="{{ old('telefono', Auth::user()->telefono) }}">
                         @error('telefono')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
@@ -48,7 +50,7 @@
                     </div>
 
                     <div class="field col-12">
-                        <div class="section-h">Cambiar contraseña</div>
+                        <div class="section-h"><i class="bi bi-shield-lock" aria-hidden="true"></i> Cambiar contraseña</div>
                     </div>
 
                     <div class="field">
@@ -67,16 +69,16 @@
 
                 <div class="form-actions">
                     <span class="spacer"></span>
-                    <button type="submit" class="btn btn--primary">Guardar cambios</button>
+                    <button type="submit" class="btn btn--primary"><i class="bi bi-check-circle" aria-hidden="true"></i> Guardar cambios</button>
                 </div>
             </form>
         </div>
 
-        <div class="card col-4">
+        <div class="card client-google-card">
             <div class="card-head">
                 <div class="card-title-wrap">
-                    <span class="eyebrow">Acceso externo</span>
-                    <h3 class="card-title">Cuenta de Google</h3>
+                    <span class="client-card-icon client-card-icon--google" aria-hidden="true"><i class="bi bi-google"></i></span>
+                    <div><span class="client-kicker">Acceso externo</span><h2 class="card-title">Cuenta de Google</h2></div>
                 </div>
             </div>
 
@@ -97,6 +99,7 @@
             @else
                 <p class="text-muted mb-0">La autenticación con Google todavía no está configurada.</p>
             @endif
+        </div>
         </div>
     </div>
 @endsection

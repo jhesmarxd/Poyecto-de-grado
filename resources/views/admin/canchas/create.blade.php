@@ -7,7 +7,7 @@
         <div class="hero-text">
             <span class="eyebrow">Canchas · Crear</span>
             <h1 class="hero-title">Nueva <span class="accent">cancha</span></h1>
-            <p class="hero-sub">Registra una cancha con su ubicación, capacidad y precio por hora.</p>
+            <p class="hero-sub">Registra una cancha con su ubicación y precio por hora.</p>
         </div>
     </div>
 
@@ -36,14 +36,6 @@
                         <label for="ubicacion" class="field-label">Ubicación</label>
                         <input id="ubicacion" type="text" class="form-control @error('ubicacion') is-invalid @enderror" name="ubicacion" value="{{ old('ubicacion') }}">
                         @error('ubicacion')
-                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                        @enderror
-                    </div>
-
-                    <div class="field">
-                        <label for="capacidad" class="field-label">Capacidad</label>
-                        <input id="capacidad" type="number" min="1" max="100" class="form-control @error('capacidad') is-invalid @enderror" name="capacidad" value="{{ old('capacidad', 4) }}" required>
-                        @error('capacidad')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
                     </div>

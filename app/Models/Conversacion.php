@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,11 +12,22 @@ class Conversacion extends Model
 {
     use HasFactory;
 
+    public const STATUS_ACTIVE = 'active';
+
+    public const STATUS_CLOSED = 'closed';
+
+    public const STATUS_EXPIRED = 'expired';
+
     /**
      * El pluralizador de Laravel generaría 'conversacions';
      * se fija explícitamente el nombre real de la tabla.
      */
     protected $table = 'conversaciones';
+
+    /** @var array<string, mixed> */
+    protected $attributes = [
+        'status' => self::STATUS_ACTIVE,
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -25,6 +37,10 @@ class Conversacion extends Model
     protected $fillable = [
         'user_id',
         'contexto',
+        'status',
+        'last_activity_at',
+        'context_expires_at',
+        'closed_at',
     ];
 
     /**
@@ -36,7 +52,15 @@ class Conversacion extends Model
     {
         return [
             'contexto' => 'array',
+            'last_activity_at' => 'datetime',
+            'context_expires_at' => 'datetime',
+            'closed_at' => 'datetime',
         ];
+    }
+
+    public function scopeActivas(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_ACTIVE);
     }
 
     /**

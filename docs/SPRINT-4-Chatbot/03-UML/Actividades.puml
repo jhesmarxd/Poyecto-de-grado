@@ -1,0 +1,76 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 4 - Diagrama de Actividades: Ciclo de Vida Conversación y Observabilidad
+
+|Cliente|
+start
+:Abre widget chat / Envía mensaje;
+|Sistema|
+:ChatbotService.procesar();
+:PoliticaSeguridadChatbot.validar() → Rate limit, Sanitización, Anti-inyección;
+if (¿Bloqueado?) then (sí)
+    :Respuesta genérica segura;
+    stop
+else (no)
+    :ConversationLifecycleService.continuar();
+    :DetectorIntencion.detectar() → Intención + Confianza;
+    :ChatbotTraceService.registrar() → Inicio traza;
+    
+    if (Confianza < 0.7) then (Baja)
+        :Pregunta clarificación (quick replies);
+        :Espera respuesta usuario;
+    else (Alta)
+        :ExtractorEntidades.extraer() → Slots (fecha, cancha, hora, balón);
+        switch (Intención)
+        case (crear_reserva)
+            :ReservaConversacionalService.crearReservaDesdeChat();
+            :ReservaService.crearReserva() [Transacción];
+            :Respuesta confirmación + botones "Ver mis reservas";
+            :ConversationLifecycleService.finalizar();
+        case (consultar_disponibilidad)
+            :ReservaConversacionalService.consultarDisponibilidad();
+            :Respuesta con horarios + botones "Reservar";
+        case (cancelar_reserva)
+            :ReservaConversacionalService.cancelarReservaChat();
+            :Respuesta confirmación;
+        case (ver_mis_reservas)
+            :ReservaConversacionalService.obtenerReservasUsuario();
+            :Respuesta lista reservas;
+        case (transferir_humano)
+            :ConversationLifecycleService.transferirHumano();
+            :Notifica a recepcionista/admin;
+            :Respuesta "Te conecto con un agente";
+        default (faq/saludo)
+            :Respuesta template + sugerencias;
+        endswitch
+        
+        :ChatbotTraceService.registrar() → Fin traza (duración, éxito, tokens);
+    endif
+endif
+
+|Sistema (Async)|
+fork
+    :ChatbotMetricasService.actualizarContadores();
+    :Incrementa: conversaciones, mensajes, fallback_rate;
+fork again
+    :ChatbotTraceService.exportarTraces() → Storage/Logging;
+    :Estructura: traceId, userId, intencion, confianza, duracion_ms, exito, error;
+fork again
+    :Alerta si fallbackRate > 30% (últimos 15 min);
+    :Notifica admin (Slack/Email);
+end fork
+stop
+
+|Admin|
+start
+:Accede a /admin/chatbot/metricas;
+:Ve Dashboard: Conversaciones/día, Fallback %, Tiempo respuesta, Top intenciones;
+:Clic "Ver Conversaciones" → /admin/chatbot/conversaciones;
+:Filtra por: estado, fecha, canal, usuario;
+:Selecciona conversación → Ver detalle + mensajes + trazas;
+:Si conversación activa y estancada → "Tomar Control";
+:Envía mensaje como agente → Marca conversation.human_takeover = true;
+stop
+
+@enduml

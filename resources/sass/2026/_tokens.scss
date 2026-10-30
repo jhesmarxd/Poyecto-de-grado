@@ -1,8 +1,7 @@
 // ============================================================
 // TOKENS DE DISEÑO — 2026 (portado de Adminator 2026)
-// Los colores de marca dinámicos (Ajuste) se inyectan desde
-// layouts/_colores.blade.php con un selector de igual o mayor
-// especificidad para ganar a estos defaults.
+// Los colores de marca se definen en config/theme.php y se inyectan desde
+// layouts/_colores.blade.php con un selector de igual o mayor especificidad.
 // ============================================================
 
 :root[data-theme="light"] {
@@ -23,7 +22,7 @@
   --border:        #E4E8EF;
   --border-soft:   #EEF1F5;
 
-  // Marca — azul (default; sobreescrito por Ajuste)
+  // Marca — azul (sobreescrito por la configuración del proyecto)
   --primary:       #2563EB;
   --primary-light: #3B82F6;
   --primary-dark:  #1D4ED8;

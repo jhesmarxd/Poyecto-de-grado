@@ -1,0 +1,65 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class User {
+    +id: bigint
+    +name: string
+    +email: string
+    +telefono: string
+    +password: string
+    +rol: string
+    +estado: boolean
+    +email_verified_at: timestamp
+    +esAdmin(): bool
+    +esRecepcionista(): bool
+    +esCliente(): bool
+    +estaActivo(): bool
+}
+
+class SocialAccount {
+    +id: bigint
+    +user_id: bigint
+    +provider: string
+    +provider_user_id: string
+    +avatar: string
+    +token: string
+    +user(): BelongsTo
+}
+
+class LoginController {
+    +showLoginForm(): View
+    +login(Request): Response
+    +logout(Request): Response
+    #credentials(Request): array
+    #sendFailedLoginResponse(Request): void
+    #redirectTo(): string
+}
+
+class RegisterController {
+    +showRegistrationForm(): View
+    +register(Request): Response
+    #validator(array): Validator
+    #create(array): User
+}
+
+class AdminUserController {
+    +index(): View
+    +create(): View
+    +store(StoreUserRequest): RedirectResponse
+    +edit(User): View
+    +update(UpdateUserRequest, User): RedirectResponse
+    +destroy(Request, User): RedirectResponse
+}
+
+class GoogleAuthController {
+    +redirectToGoogle(): RedirectResponse
+    +handleGoogleCallback(): RedirectResponse
+}
+
+User "1" *-- "0..*" SocialAccount : posee
+LoginController ..> User : autentica
+RegisterController ..> User : registra
+AdminUserController ..> User : administra
+GoogleAuthController ..> User : vincula
+GoogleAuthController ..> SocialAccount : almacena
+@enduml

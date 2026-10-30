@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use App\Services\PoliticaReservasService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 class Cancha extends Model
 {
@@ -34,7 +34,6 @@ class Cancha extends Model
         'nombre',
         'descripcion',
         'ubicacion',
-        'capacidad',
         'precio_por_hora',
         'estado',
         'imagen',
@@ -52,7 +51,6 @@ class Cancha extends Model
     protected function casts(): array
     {
         return [
-            'capacidad' => 'integer',
             'precio_por_hora' => 'decimal:2',
             'estado' => 'string',
         ];
@@ -104,32 +102,7 @@ class Cancha extends Model
      */
     public function horariosDisponiblesPara(string $fecha): Collection
     {
-        if ($this->cierres()->whereDate('fecha', $fecha)->exists()) {
-            return new Collection;
-        }
-
-        $diaSemana = Carbon::parse($fecha)->dayOfWeekIso; // 1 = Lunes ... 7 = Domingo
-
-        return $this->horarios()
-            ->where('dia_semana', $diaSemana)
-            ->where('disponible', true)
-            ->where(fn (Builder $query) => $query
-                ->whereNull('vigente_desde')
-                ->orWhereDate('vigente_desde', '<=', $fecha))
-            ->where(fn (Builder $query) => $query
-                ->whereNull('vigente_hasta')
-                ->orWhereDate('vigente_hasta', '>=', $fecha))
-            ->orderBy('hora_inicio')
-            ->get()
-            ->reject(function (Horario $horario) use ($fecha): bool {
-                return Reserva::query()
-                    ->activas()
-                    ->deCanchaEnFecha($this->id, $fecha)
-                    ->where('hora_inicio_reserva', '<', $horario->hora_fin)
-                    ->where('hora_fin_reserva', '>', $horario->hora_inicio)
-                    ->exists();
-            })
-            ->values();
+        return app(PoliticaReservasService::class)->horariosLibres($this, $fecha);
     }
 
     /**

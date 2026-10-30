@@ -1,0 +1,36 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Administrador" as Admin
+actor "Recepcionista" as Recep
+actor "Cliente" as Cliente
+
+rectangle "Módulo de Reservas y Asistente NLP (Sprint 3)" {
+    usecase "CU-05: Administrar Reservas" as CU05
+    usecase "CU-05.1: Crear Reserva Online (Cliente)" as CU05_Cliente
+    usecase "CU-05.2: Registrar Reserva Presencial (Recepción)" as CU05_Recep
+    usecase "CU-05.3: Gestionar Check-in / Check-out" as CU05_Checkin
+    usecase "CU-05.4: Sincronizar con Google Calendar" as CU05_GCal
+    usecase "CU-05.5: Configurar Parámetros de Reserva" as CU05_Config
+    usecase "CU-06: Gestionar Chatbot NLP (WallyBot)" as CU06
+    usecase "CU-06.1: Consultar Disponibilidad y Precios" as CU06_Consulta
+    usecase "CU-06.2: Guiar Proceso de Reserva por Chat" as CU06_Reserva
+    usecase "CU-06.3: Supervisar Trazas y Conversaciones" as CU06_Audit
+}
+
+Admin --> CU05
+Admin --> CU05_Config
+Admin --> CU06_Audit
+
+Recep --> CU05_Recep
+Recep --> CU05_Checkin
+
+Cliente --> CU05_Cliente
+Cliente --> CU06
+CU06 ..> CU06_Consulta : <<include>>
+CU06 ..> CU06_Reserva : <<extend>>
+CU05_Cliente ..> CU05_GCal : <<extend>>
+CU05_Recep ..> CU05_GCal : <<extend>>
+@enduml

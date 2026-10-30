@@ -1,0 +1,50 @@
+@startuml
+autonumber
+actor "Cliente" as Cliente
+boundary "Vista Reserva\n(reservas/create.blade.php)" as View
+control "ReservaController" as Controller
+control "StoreReservaRequest" as FormRequest
+control "ReservaService" as Service
+control "PoliticaReservasService" as Policy
+database "Base de Datos\n(reservas)" as DB
+queue "Cola de Trabajos\n(SyncGoogleCalendarJob)" as Queue
+
+Cliente -> View : Selecciona Cancha, Fecha, Horario y Balón (opcional)
+Cliente -> View : Clic en "Confirmar Reserva"
+View -> Controller : POST /reservas
+activate Controller
+
+Controller -> FormRequest : validated()
+activate FormRequest
+FormRequest --> Controller : Datos validados
+deactivate FormRequest
+
+Controller -> Service : crearReserva(datos, cliente)
+activate Service
+
+Service -> Policy : validarAnticipacionYLimites(cliente, fecha, hora)
+Policy --> Service : Validación satisfactoria
+
+Service -> DB : Inicia Transacción DB::beginTransaction()
+Service -> DB : SELECT * FROM reservas WHERE cancha_id=? AND fecha=?\nAND hora_inicio < fin AND hora_fin > inicio FOR UPDATE
+DB --> Service : Registros solapados (debe ser 0)
+
+alt Horario ocupado por concurrencia
+    Service -> DB : DB::rollBack()
+    Service --> Controller : ValidationException("El horario ya no está disponible.")
+    Controller --> View : Muestra error de solapamiento
+    View --> Cliente : Notifica conflicto de horario
+else Horario libre y disponible
+    Service -> DB : INSERT INTO reservas (user_id, cancha_id, horario_id, balon_id, fecha, monto_total, estado='confirmada'...)
+    DB --> Service : ID Reserva generada
+    Service -> DB : DB::commit()
+
+    Service -> Queue : dispatch(SyncReservationToGoogleCalendar(reserva))
+    Service --> Controller : Instancia Reserva confirmada
+    deactivate Service
+
+    Controller --> View : RedirectResponse a /reservas/{id} con status("Reserva realizada con éxito.")
+    View --> Cliente : Muestra comprobante con detalles de la cancha y tiempo de tolerancia
+end
+deactivate Controller
+@enduml

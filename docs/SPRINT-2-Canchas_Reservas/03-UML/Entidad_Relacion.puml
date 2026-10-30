@@ -1,0 +1,128 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 2 - Diagrama Entidad-Relación: Canchas, Horarios, Reservas, Balones
+
+entity "canchas" as Canchas {
+    * id : BIGINT <<PK>>
+    --
+    * nombre : VARCHAR(255)
+    * descripcion : TEXT <<NULLABLE>>
+    * ubicacion : VARCHAR(255) <<NULLABLE>>
+    * precio_por_hora : DECIMAL(10,2)
+    * estado : ENUM('disponible','mantenimiento','inactiva')
+    * imagen : VARCHAR(255) <<NULLABLE>>
+    * color_malla : VARCHAR(7) <<NULLABLE>>
+    * altura_malla : VARCHAR(50) <<NULLABLE>>
+    * tipo_piso : VARCHAR(100) <<NULLABLE>>
+    * tipo_recinto : ENUM('abierta','cerrada') <<NULLABLE>>
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+}
+
+entity "horarios" as Horarios {
+    * id : BIGINT <<PK>>
+    --
+    * cancha_id : BIGINT <<FK>>
+    * dia_semana : TINYINT (1=Lun..7=Dom)
+    * hora_inicio : TIME
+    * hora_fin : TIME
+    * disponible : BOOLEAN
+    * vigente_desde : DATE <<NULLABLE>>
+    * vigente_hasta : DATE <<NULLABLE>>
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+}
+
+entity "reservas" as Reservas {
+    * id : BIGINT <<PK>>
+    --
+    * user_id : BIGINT <<FK>>
+    * reprogramada_desde_id : BIGINT <<FK,NULLABLE>>
+    * cancha_id : BIGINT <<FK>>
+    * horario_id : BIGINT <<FK>>
+    * fecha : DATE
+    * hora_inicio_reserva : TIME
+    * hora_fin_reserva : TIME
+    * duracion_minutos : INT
+    * monto_total : DECIMAL(10,2)
+    * tipo_balon : ENUM('propio','prestado','premium')
+    * balon_id : BIGINT <<FK,NULLABLE>>
+    * estado : ENUM('pendiente','confirmada','cancelada','completada','afectada_por_configuracion','cancelada_por_complejo','reprogramada')
+    * observaciones : TEXT <<NULLABLE>>
+    * check_in_at : TIMESTAMP <<NULLABLE>>
+    * check_out_at : TIMESTAMP <<NULLABLE>>
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+}
+
+entity "balones" as Balones {
+    * id : BIGINT <<PK>>
+    --
+    * tipo : ENUM('estandar','premium')
+    * marca : VARCHAR(100)
+    * modelo : VARCHAR(100)
+    * precio_por_hora : DECIMAL(10,2)
+    * imagen : VARCHAR(255) <<NULLABLE>>
+    * stock : INT
+    * activo : BOOLEAN
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+}
+
+entity "horarios_semanales" as HorariosSemanales {
+    * id : BIGINT <<PK>>
+    --
+    * cancha_id : BIGINT <<FK>>
+    * dia_semana : TINYINT
+    * hora_inicio : TIME
+    * hora_fin : TIME
+    * creado_por_admin : BOOLEAN
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+}
+
+Canchas ||--o{ Horarios : "1:N"
+Canchas ||--o{ Reservas : "1:N"
+Canchas ||--o{ HorariosSemanales : "1:N"
+Horarios ||--o{ Reservas : "1:N"
+Users ||--o{ Reservas : "1:N"
+Balones ||--o{ Reservas : "1:N (balón compartido)"
+Reservas ||--o| Reservas : "reprogramada_desde (auto-ref)"
+
+note right of Canchas
+    Índices:
+    - PRIMARY KEY (id)
+    - INDEX (estado)
+end note
+
+note right of Horarios
+    Índices:
+    - PRIMARY KEY (id)
+    - FOREIGN KEY (cancha_id) REFERENCES canchas(id) ON DELETE CASCADE
+    - INDEX (cancha_id, dia_semana)
+    - UNIQUE (cancha_id, dia_semana, hora_inicio, hora_fin)
+end note
+
+note right of Reservas
+    Índices:
+    - PRIMARY KEY (id)
+    - FOREIGN KEY (user_id) REFERENCES users(id)
+    - FOREIGN KEY (cancha_id) REFERENCES canchas(id)
+    - FOREIGN KEY (horario_id) REFERENCES horarios(id)
+    - FOREIGN KEY (balon_id) REFERENCES balones(id) ON DELETE SET NULL
+    - FOREIGN KEY (reprogramada_desde_id) REFERENCES reservas(id) ON DELETE SET NULL
+    - INDEX (fecha, cancha_id)
+    - INDEX (fecha, estado)
+    - INDEX (user_id, fecha)
+    - INDEX (estado, fecha)
+end note
+
+note right of Balones
+    Índices:
+    - PRIMARY KEY (id)
+    - INDEX (activo)
+    - INDEX (tipo)
+end note
+
+@enduml

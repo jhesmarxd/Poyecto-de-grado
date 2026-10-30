@@ -1,0 +1,52 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 3 - Diagrama de Secuencia: Cambio Configuración → Reprogramación Masiva
+
+actor "Admin" as Admin
+participant "Admin\\ConfiguracionReservaController" as Ctrl
+participant "ConfiguracionReservaService" as Svc
+participant "ReservaService" as ResSvc
+database "DB" as DB
+participant "EnviarRecordatoriosReservas" as JobNotif
+participant "SyncReservationToGoogleCalendar" as JobSync
+
+Admin -> Ctrl: PUT /admin/configuracion-reservas (nuevas políticas)
+activate Ctrl
+Ctrl -> Svc: aplicarCambios(nuevaConfig)
+activate Svc
+
+Svc -> DB: BEGIN TRANSACTION
+Svc -> DB: UPDATE configuracion_reservas SET valor = ?
+DB --> Svc: OK
+Svc -> Svc: detectarReservasAfectadas(nuevaConfig)
+Svc -> DB: SELECT * FROM reservas WHERE fecha >= ? AND estado IN (pendiente, confirmada)
+DB --> Svc: Reservas afectadas
+
+loop Para cada reserva afectada
+    alt Nueva política permite horario
+        Svc -> ResSvc: marcarAfectadaPorConfiguracion(reserva)
+        ResSvc -> DB: UPDATE reservas SET estado = 'afectada_por_configuracion' WHERE id = ?
+        Svc -> DB: INSERT INTO reservas_afectadas_configuracion (reserva_id, cambio_id, accion='reprogramada', ...)
+    else Nueva política NO permite horario
+        Svc -> ResSvc: cancelarPorComplejo(reserva)
+        ResSvc -> DB: UPDATE reservas SET estado = 'cancelada_por_complejo' WHERE id = ?
+        Svc -> DB: INSERT INTO reservas_afectadas_configuracion (reserva_id, cambio_id, accion='cancelada', ...)
+    end
+    
+    par Notificar cliente
+        ResSvc -> JobNotif: dispatch(reserva.id, tipo='reprogramada'|'cancelada')
+    end
+    
+    par Sync Google Calendar
+        ResSvc -> JobSync: dispatch(reserva.id)
+    end
+end
+
+Svc -> DB: COMMIT
+Svc --> Ctrl: Resultado { afectadas, reprogramadas, canceladas }
+Ctrl --> Admin: Vista review con resumen
+deactivate Svc
+deactivate Ctrl
+
+@enduml

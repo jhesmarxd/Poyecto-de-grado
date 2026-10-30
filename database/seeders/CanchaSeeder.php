@@ -13,16 +13,11 @@ class CanchaSeeder extends Seeder
      */
     public function run(): void
     {
-        // Reemplaza las canchas de ejemplo anteriores (las reservas y
-        // horarios asociados se eliminan en cascada por las claves foráneas).
-        Cancha::query()->delete();
-
         $canchas = [
             [
                 'nombre' => 'Cancha 1',
                 'descripcion' => 'Cancha cerrada (techada). Ideal para jugar todo el día sin sol ni lluvia.',
                 'ubicacion' => 'Complejo Wally · Zona Norte',
-                'capacidad' => 4,
                 'precio_por_hora' => 25.00,
                 'estado' => Cancha::ESTADO_DISPONIBLE,
                 'imagen' => 'cancha-1.jpeg',
@@ -35,7 +30,6 @@ class CanchaSeeder extends Seeder
                 'nombre' => 'Cancha 2',
                 'descripcion' => 'Cancha cerrada (techada). Confort y seguridad en cada partido.',
                 'ubicacion' => 'Complejo Wally · Zona Sur',
-                'capacidad' => 4,
                 'precio_por_hora' => 25.00,
                 'estado' => Cancha::ESTADO_DISPONIBLE,
                 'imagen' => 'cancha-2.jpeg',

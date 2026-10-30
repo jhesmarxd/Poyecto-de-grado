@@ -1,0 +1,88 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 4 - Diagrama de Casos de Uso: Chatbot IA y Observabilidad
+
+$Actor(Cliente, "Cliente")
+$Actor(Admin, "Administrador")
+$Actor(NLPProvider, "Proveedor NLP Externo")
+$Actor(Sistema, "Sistema")
+
+rectangle "Chatbot Conversacional (Cliente)" {
+    usecase "Consultar Disponibilidad" as UC1
+    usecase "Crear Reserva por Chat" as UC2
+    usecase "Cancelar Reserva por Chat" as UC3
+    usecase "Ver Mis Reservas por Chat" as UC4
+    usecase "Preguntas Frecuentes (FAQ)" as UC5
+    usecase "Transferir a Humano" as UC6
+}
+
+rectangle "Widget Web (Cliente)" {
+    usecase "Abrir Chat Widget" as UC7
+    usecase "Ver Historial Conversación" as UC8
+}
+
+rectangle "Administración Chatbot (Admin)" {
+    usecase "Ver Métricas Dashboard" as UC9
+    usecase "Ver Historial Conversaciones" as UC10
+    usecase "Ver Conversación Detalle" as UC11
+    usecase "Tomar Control Conversación" as UC12
+    usecase "Configurar Respuestas Automáticas" as UC13
+}
+
+rectangle "Procesamiento NLP (Sistema)" {
+    usecase "Detectar Intención" as NLP1
+    usecase "Extraer Entidades" as NLP2
+    usecase "Validar Seguridad" as NLP3
+    usecase "Ejecutar Acción" as NLP4
+    usecase "Generar Respuesta" as NLP5
+    usecase "Registrar Traza" as NLP6
+}
+
+rectangle "Observabilidad (Sistema)" {
+    usecase "Métricas Performance" as O1
+    usecase "Logs Estructurados" as O2
+    usecase "Alertas Fallback Rate" as O3
+    usecase "Trazas Distribuidas" as O4
+}
+
+Cliente --> UC1
+Cliente --> UC2
+Cliente --> UC3
+Cliente --> UC4
+Cliente --> UC5
+Cliente --> UC6
+Cliente --> UC7
+Cliente --> UC8
+
+Admin --> UC9
+Admin --> UC10
+Admin --> UC11
+Admin --> UC12
+Admin --> UC13
+
+UC1 ..> NLP1 : <<include>>
+UC1 ..> NLP2 : <<include>>
+UC2 ..> NLP1 : <<include>>
+UC2 ..> NLP2 : <<include>>
+UC2 ..> NLP3 : <<include>>
+UC2 ..> NLP4 : <<include>>
+UC2 ..> NLP5 : <<include>>
+UC6 ..> NLP4 : <<include>>
+
+NLP1 ..> NLPProvider : <<include>> (proveedor externo)
+NLP2 ..> NLPProvider : <<include>>
+NLP3 ..> Sistema : Rate limit, sanitización
+NLP4 ..> ReservaService : Crear/Cancelar reserva
+NLP5 ..> Sistema : Template respuesta
+NLP6 ..> O1 : Métricas
+NLP6 ..> O2 : Logs
+NLP6 ..> O4 : Trazas
+
+Sistema --> O1
+Sistema --> O2
+Sistema --> O3
+Sistema --> O4
+
+$Legend
+@enduml

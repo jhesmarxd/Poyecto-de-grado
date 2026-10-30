@@ -1,0 +1,42 @@
+@startuml
+start
+:Administrador inicia sesión y accede a /admin/usuarios;
+:Sistema consulta y lista usuarios activos e inactivos;
+if (¿Qué operación desea realizar?) then (Crear Usuario)
+    :Selecciona "+ Nuevo usuario";
+    :Llena formulario con nombre, correo, teléfono, rol y contraseña;
+    :Presiona "Guardar usuario";
+    :Valida reglas de StoreUserRequest;
+    if (¿Correo único y datos válidos?) then (Sí)
+        :Inserta nuevo usuario en tabla users con estado=1;
+        :Retorna mensaje "Usuario creado correctamente";
+    else (No)
+        :Muestra errores de validación en pantalla;
+    endif
+elseif (Modificar Usuario) then
+    :Selecciona "Editar" en el usuario deseado;
+    :Carga datos en admin/usuarios/edit.blade.php;
+    :Modifica teléfono, rol o contraseña (opcional);
+    :Presiona "Actualizar usuario";
+    :Valida reglas de UpdateUserRequest;
+    if (¿Datos válidos?) then (Sí)
+        :Actualiza registro en tabla users;
+        :Retorna mensaje "Usuario actualizado correctamente";
+    else (No)
+        :Muestra errores de validación;
+    endif
+elseif (Cambiar Estado / Desactivar) then
+    :Modifica toggle de Estado (activo/inactivo);
+    :Persiste cambio en tabla users;
+    :Si se desactiva, el usuario no podrá iniciar sesión;
+else (Eliminar Usuario)
+    if (¿Es su propia cuenta administrativa?) then (Sí)
+        :Bloquea acción: no puede eliminarse a sí mismo;
+    else (No)
+        :Elimina registro del usuario;
+        :Retorna confirmación;
+    endif
+endif
+:Actualiza listado de usuarios;
+stop
+@enduml

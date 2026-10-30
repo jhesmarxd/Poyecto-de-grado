@@ -1,0 +1,76 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 2 - Diagrama de Casos de Uso: Canchas, Horarios y Reservas
+
+$Actor(Cliente, "Cliente")
+$Actor(Admin, "Administrador")
+$Actor(Recepcionista, "Recepcionista")
+$Actor(Sistema, "Sistema")
+
+rectangle "Gestión Canchas (Admin)" {
+    usecase "Listar Canchas" as UC1
+    usecase "Crear Cancha" as UC2
+    usecase "Editar Cancha" as UC3
+    usecase "Eliminar/Desactivar Cancha" as UC4
+    usecase "Subir Imagen Cancha" as UC5
+}
+
+rectangle "Gestión Horarios (Admin)" {
+    usecase "Listar Horarios" as UC6
+    usecase "Crear Horario" as UC7
+    usecase "Editar Horario" as UC8
+    usecase "Eliminar Horario" as UC9
+}
+
+rectangle "Reservas (Cliente)" {
+    usecase "Ver Disponibilidad" as UC10
+    usecase "Crear Reserva" as UC11
+    usecase "Ver Mis Reservas" as UC12
+    usecase "Cancelar Reserva" as UC13
+    usecase "Ver Calendario" as UC14
+}
+
+rectangle "Recepción (Recepcionista)" {
+    usecase "Ver Reservas Hoy" as UC15
+    usecase "Crear Reserva Walk-in" as UC16
+    usecase "Check-in Cliente" as UC17
+    usecase "Check-out Cliente" as UC18
+}
+
+rectangle "Reglas de Negocio" {
+    usecase "Validar Solapamiento Cancha" as RN1
+    usecase "Validar Solapamiento Balón" as RN2
+    usecase "Validar Política Reservas" as RN3
+}
+
+Admin --> UC1
+Admin --> UC2
+Admin --> UC3
+Admin --> UC4
+Admin --> UC5
+Admin --> UC6
+Admin --> UC7
+Admin --> UC8
+Admin --> UC9
+
+Cliente --> UC10
+Cliente --> UC11
+Cliente --> UC12
+Cliente --> UC13
+Cliente --> UC14
+
+Recepcionista --> UC15
+Recepcionista --> UC16
+Recepcionista --> UC17
+Recepcionista --> UC18
+
+UC11 ..> RN1 : <<include>>
+UC11 ..> RN2 : <<include>>
+UC11 ..> RN3 : <<include>>
+UC16 ..> RN1 : <<include>>
+UC16 ..> RN2 : <<include>>
+UC17 ..> RN3 : <<include>>
+
+$Legend
+@enduml

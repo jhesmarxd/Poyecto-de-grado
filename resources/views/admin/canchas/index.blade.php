@@ -27,7 +27,6 @@
                                 <th>Nombre</th>
                                 <th>Recinto</th>
                                 <th>Ubicación</th>
-                                <th>Capacidad</th>
                                 <th>Precio/hora</th>
                                 <th>Franjas</th>
                                 <th>Estado</th>
@@ -54,7 +53,6 @@
                                         @endif
                                     </td>
                                     <td>{{ $cancha->ubicacion ?? '—' }}</td>
-                                    <td>{{ $cancha->capacidad }}</td>
                                     <td>Bs. {{ number_format($cancha->precio_por_hora, 2) }}</td>
                                     <td>
                                         <span class="badge bg-secondary">{{ $cancha->horarios_count }}</span>

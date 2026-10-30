@@ -19,6 +19,7 @@ class ReservaService
 {
     public function __construct(
         private ?ReservaNotificationService $notificaciones = null,
+        private ?PoliticaReservasService $politicaReservas = null,
     ) {}
 
     /**
@@ -26,7 +27,7 @@ class ReservaService
      */
     public function esFechaValida(?string $fecha): bool
     {
-        return $fecha !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha) === 1;
+        return ($this->politicaReservas ??= app(PoliticaReservasService::class))->fechaValida($fecha);
     }
 
     /**
@@ -143,11 +144,29 @@ class ReservaService
                 abort(422, 'El horario no está vigente para la fecha seleccionada.');
             }
 
-            $horaFin = $data['hora_fin'] ?? $horario->hora_fin;
+            $horaFin = Carbon::parse($data['hora_fin'] ?? $horario->hora_fin)->format('H:i:s');
             $inicio = Carbon::parse($fecha.' '.$horario->hora_inicio);
             $fin = Carbon::parse($fecha.' '.$horaFin);
             if ($fin->lessThanOrEqualTo($inicio)) {
                 abort(422, 'La hora final debe ser posterior a la hora inicial.');
+            }
+
+            // Devuelve un conflicto estable incluso cuando el registro que
+            // compite fue creado antes de activar una política operativa nueva.
+            if ($this->periodoOcupado($cancha->id, $fecha, $horario->hora_inicio, $horaFin)) {
+                abort(409, 'Ese horario ya fue reservado. Por favor elige otro.');
+            }
+
+            $politica = $this->politicaReservas ??= app(PoliticaReservasService::class);
+            $regla = $politica->validarRangoOperativo($cancha, $fecha, $horario->hora_inicio, $horaFin);
+            if (! $regla->disponible()) {
+                abort(422, $regla->mensaje);
+            }
+
+            $duracionMinutos = (int) $inicio->diffInMinutes($fin);
+            $duraciones = array_map('intval', $politica->configuracion()->duraciones_permitidas ?? [60, 90, 120]);
+            if (! in_array($duracionMinutos, $duraciones, true)) {
+                abort(422, 'La duración permitida debe ser de '.implode(', ', $duraciones).' minutos.');
             }
 
             $franjas = $cancha->horarios()
@@ -172,10 +191,6 @@ class ReservaService
                 abort(422, 'El rango solicitado no está completamente habilitado.');
             }
 
-            if ($this->periodoOcupado($cancha->id, $fecha, $horario->hora_inicio, $horaFin)) {
-                abort(409, 'Ese horario ya fue reservado. Por favor elige otro.');
-            }
-
             $balonId = $data['balon_id'] ?? null;
             $balon = $balonId
                 ? Balon::query()->lockForUpdate()->findOrFail($balonId)
@@ -185,11 +200,10 @@ class ReservaService
                 abort(409, 'Ese balón ya fue reservado para esa fecha y hora. Elige otro balón o trae el tuyo.');
             }
 
-            $duracionMinutos = $inicio->diffInMinutes($fin);
-
             try {
                 return Reserva::create([
                     'user_id' => $user->id,
+                    'reprogramada_desde_id' => $data['reprogramada_desde_id'] ?? null,
                     'cancha_id' => $cancha->id,
                     'horario_id' => $horario->id,
                     'fecha' => $fecha,
@@ -226,6 +240,25 @@ class ReservaService
         $reserva->update(['estado' => Reserva::ESTADO_CANCELADA]);
         $this->programarSincronizacionGoogle($reserva);
         $this->notificar($reserva, ReservaNotificationService::TIPO_CANCELADA);
+    }
+
+    public function marcarAfectadaPorConfiguracion(Reserva $reserva): void
+    {
+        $reserva->update(['estado' => Reserva::ESTADO_AFECTADA]);
+        $this->programarSincronizacionGoogle($reserva);
+    }
+
+    public function cancelarPorComplejo(Reserva $reserva): void
+    {
+        $reserva->update(['estado' => Reserva::ESTADO_CANCELADA_COMPLEJO]);
+        $this->programarSincronizacionGoogle($reserva);
+        $this->notificar($reserva, ReservaNotificationService::TIPO_CANCELADA);
+    }
+
+    public function marcarReprogramada(Reserva $reserva): void
+    {
+        $reserva->update(['estado' => Reserva::ESTADO_REPROGRAMADA]);
+        $this->programarSincronizacionGoogle($reserva);
     }
 
     /**
@@ -331,7 +364,7 @@ class ReservaService
     public function reservasDelUsuario(User $user)
     {
         return $user->reservas()
-            ->with(['cancha', 'horario', 'balon'])
+            ->with(['cancha', 'horario', 'balon', 'afectacionConfiguracion.cambio', 'googleCalendarEvent'])
             ->orderByDesc('fecha')
             ->orderByDesc('id')
             ->get();
@@ -365,7 +398,7 @@ class ReservaService
     public function reservasConFiltros(?string $estado = null, ?int $canchaId = null)
     {
         return Reserva::query()
-            ->with(['usuario', 'cancha', 'horario', 'balon', 'googleCalendarEvent'])
+            ->with(['usuario', 'cancha', 'horario', 'balon'])
             ->when($estado, fn ($q) => $q->where('estado', $estado))
             ->when($canchaId, fn ($q) => $q->where('cancha_id', $canchaId))
             ->orderByDesc('fecha')
@@ -375,13 +408,15 @@ class ReservaService
 
     private function programarSincronizacionGoogle(Reserva $reserva): void
     {
-        if ($reserva->estado === Reserva::ESTADO_PENDIENTE) {
+        $link = $reserva->googleCalendarEvent;
+
+        if ($reserva->estado === Reserva::ESTADO_PENDIENTE
+            || ($reserva->estaCancelada() && ! $link)
+            || ($reserva->estado !== Reserva::ESTADO_CONFIRMADA && ! $link)) {
             return;
         }
 
-        $link = $reserva->googleCalendarEvent;
-        if ($reserva->estaCancelada() && ! $link) {
-            // Una reserva cancelada antes de confirmarse nunca existio en Calendar.
+        if (! $link && ! config('services.google_calendar.enabled')) {
             return;
         }
 

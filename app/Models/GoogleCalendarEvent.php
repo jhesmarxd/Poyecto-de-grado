@@ -38,4 +38,21 @@ class GoogleCalendarEvent extends Model
     {
         return $this->belongsTo(Reserva::class);
     }
+
+    /**
+     * Enlace externo válido únicamente para un evento de Google Calendar.
+     */
+    public function urlSegura(): ?string
+    {
+        if (! $this->google_event_url || filter_var($this->google_event_url, FILTER_VALIDATE_URL) === false) {
+            return null;
+        }
+
+        $host = strtolower((string) parse_url($this->google_event_url, PHP_URL_HOST));
+        $scheme = strtolower((string) parse_url($this->google_event_url, PHP_URL_SCHEME));
+
+        return $scheme === 'https' && in_array($host, ['calendar.google.com', 'www.google.com'], true)
+            ? $this->google_event_url
+            : null;
+    }
 }

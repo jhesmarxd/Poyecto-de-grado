@@ -1,0 +1,70 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class AdminDashboardController {
+    +index(EstadisticasService): View
+    +metricasGenerales(): JsonResponse
+}
+
+class AdminReporteController {
+    +index(Request): View
+    +exportarPdf(Request): Response
+    +exportarExcel(Request): BinaryFileResponse
+}
+
+class AdminChatbotMetricasController {
+    +index(ChatbotMetricasService): View
+}
+
+class EstadisticasService {
+    +metricas(): array
+    +reservasActivas(): int
+    +ingresosEstimados(): float
+    +reservasPorDia(): Collection
+    +reservasPorEstado(): Collection
+    +canchasMasUsadas(): Collection
+}
+
+class ReporteService {
+    +rangoFechas(Request): array
+    +reservasConFiltros(Request): Collection
+    +calcularResumen(Collection): array
+    +exportarPDF(Request): Response
+    +exportarExcel(Request): BinaryFileResponse
+}
+
+class ChatbotMetricasService {
+    +resumenGeneral(): array
+    +distribucionIntenciones(): Collection
+    +tasaEfectividad(): float
+    +latenciaPromedioMs(): int
+}
+
+class Reserva {
+    +id: bigint
+    +fecha: date
+    +monto_total: decimal
+    +estado: enum
+}
+
+class Cancha {
+    +id: bigint
+    +nombre: string
+}
+
+class ChatbotEjecucion {
+    +id: bigint
+    +latencia_ms: int
+    +tokens_entrada: int
+    +tokens_salida: int
+}
+
+AdminDashboardController ..> EstadisticasService : consume datos KPI
+AdminReporteController ..> ReporteService : filtra y exporta
+AdminChatbotMetricasController ..> ChatbotMetricasService : analiza desempeno NLP
+EstadisticasService ..> Reserva : agrega datos de ventas
+EstadisticasService ..> Cancha : calcula ocupacion
+ReporteService ..> Reserva : consulta registros filtrados
+ChatbotMetricasService ..> ChatbotEjecucion : audita latencia y costos
+@enduml
+

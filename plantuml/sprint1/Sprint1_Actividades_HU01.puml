@@ -1,0 +1,43 @@
+@startuml
+start
+:Usuario accede a la pantalla de login;
+if (¿Desea autenticar con Google?) then (Sí)
+    :Selecciona "Continuar con Google";
+    :Redirige a OAuth Google;
+    :Usuario autoriza permisos en Google;
+    :Callback procesa token y perfil;
+    :Crea o vincula cuenta SocialAccount;
+else (No)
+    :Ingresa correo y contraseña local;
+    :Presiona "Iniciar Sesión";
+    :Sistema valida campos requeridos;
+    if (¿Campos válidos?) then (No)
+        :Muestra error de formato o requerimiento;
+        stop
+    else (Sí)
+        :Consulta usuario por email en base de datos;
+        if (¿Usuario existe y contraseña coincide?) then (No)
+            :Muestra "Credenciales no coinciden";
+            stop
+        else (Sí)
+            if (¿Cuenta activa? estado == true) then (No)
+                :Muestra "Tu cuenta se encuentra inactiva";
+                stop
+            else (Sí)
+                :Inicia sesión y regenera Token de sesión;
+            endif
+        endif
+    endif
+endif
+
+:Evalúa rol del usuario;
+if (Rol == Administrador) then (Sí)
+    :Redirige a /admin (Dashboard);
+elseif (Rol == Recepcionista) then (Sí)
+    :Redirige a /recepcionista/reservas/hoy;
+else (Cliente)
+    :Redirige a /home;
+endif
+:Muestra panel autorizado;
+stop
+@enduml

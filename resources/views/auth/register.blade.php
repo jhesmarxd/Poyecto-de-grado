@@ -17,7 +17,7 @@
     </div>
 
     <div class="auth-form">
-        <form method="POST" action="{{ route('register') }}">
+        <form method="POST" action="{{ route('register') }}" class="auth-register-form">
             @csrf
 
             <div class="auth-field" style="animation-delay: 0.1s">

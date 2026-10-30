@@ -160,93 +160,112 @@
         </div>
     </section>
 
-{{-- Métricas rápidas --}}
-<div class="container py-5">
-    <div class="row g-4 text-center">
-        <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm rounded-4">
-                <div class="card-body py-4">
-                    <span class="icono-metrica mb-3">🏟️</span>
-                    <div class="display-5 fw-bold mb-1" style="color: var(--color-primario)">{{ $metricas['canchas'] }}</div>
-                    <div class="fs-5 text-muted">Canchas disponibles</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm rounded-4">
-                <div class="card-body py-4">
-                    <span class="icono-metrica mb-3">📅</span>
-                    <div class="display-5 fw-bold mb-1" style="color: var(--color-primario)">{{ $metricas['reservas'] }}</div>
-                    <div class="fs-5 text-muted">Reservas activas</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm rounded-4">
-                <div class="card-body py-4">
-                    <span class="icono-metrica mb-3">💰</span>
-                    <div class="display-5 fw-bold mb-1" style="color: var(--color-primario)">Bs. {{ number_format($metricas['ingresos'], 0) }}</div>
-                    <div class="fs-5 text-muted">En reservas gestionadas</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 {{-- Canchas destacadas --}}
-<div class="container pb-5">
-    <div class="text-center mb-5">
-        <span class="badge rounded-pill px-3 py-2 fw-semibold" style="background: rgba(var(--color-primario-rgb), 0.12); color: var(--color-primario)">Las favoritas</span>
-        <h2 class="display-6 fw-bold mt-3 mb-2">Canchas destacadas</h2>
-        <p class="fs-5 text-muted mb-0">Las más solicitadas por nuestros clientes.</p>
-    </div>
+<section class="welcome-courts" aria-labelledby="welcome-courts-title">
+    <div class="container">
+        <header class="welcome-courts__header">
+            <span class="welcome-courts__eyebrow">Conoce nuestros espacios</span>
+            <span class="visually-hidden">Canchas destacadas</span>
+            <h2 class="welcome-courts__title" id="welcome-courts-title">
+                Encuentra la cancha ideal
+                <span>para tu partido</span>
+            </h2>
+            <p class="welcome-courts__description">
+                Consulta las características y la disponibilidad de nuestras canchas y elige el espacio
+                que mejor se adapte a tu partido.
+            </p>
+        </header>
 
-    <div class="row g-4">
-        @foreach ($canchasDestacadas as $cancha)
-            <div class="col-md-4">
-                <div class="card card-cancha h-100 shadow-sm overflow-hidden">
-                    <div class="position-relative" style="height: 180px; background: rgba(var(--color-primario-rgb), 0.06);">
-                        @if ($cancha->imagenUrl($version))
-                            <img src="{{ $cancha->imagenUrl($version) }}" alt="{{ $cancha->nombre }}"
-                                 class="w-100 h-100" style="object-fit: cover;">
-                        @else
-                            <div class="h-100 d-flex align-items-center justify-content-center text-muted">
-                                <i class="bi bi-image fs-1"></i>
-                            </div>
-                        @endif
-                        <span class="badge rounded-pill position-absolute top-0 end-0 m-2" ></span>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h3 class="h4 fw-bold mb-0">{{ $cancha->nombre }}</h3>
+        <div class="row g-4">
+            @forelse ($canchasDestacadas as $cancha)
+                <div class="col-12 col-md-6 col-xl-4 d-flex">
+                    <article class="card-cancha">
+                        <div class="card-cancha__media">
+                            @if ($cancha->imagenUrl($version))
+                                <img
+                                    class="card-cancha__image"
+                                    src="{{ $cancha->imagenUrl($version) }}"
+                                    alt="{{ $cancha->nombre }}"
+                                    loading="lazy"
+                                >
+                            @else
+                                <div class="card-cancha__placeholder" aria-label="Cancha sin imagen disponible">
+                                    <i class="bi bi-image" aria-hidden="true"></i>
+                                </div>
+                            @endif
+
                             @if ($cancha->esCerrada())
-                                <span class="badge bg-info text-dark rounded-pill"></span>
+                                <span class="card-cancha__badge">
+                                    <i class="bi bi-house" aria-hidden="true"></i>
+                                    Cubierta
+                                </span>
                             @endif
                         </div>
-                        <p class="text-muted mb-2">
-                            📍 {{ $cancha->ubicacion ?? 'Sin ubicación' }} · 👥 Capacidad: {{ $cancha->capacidad }} jugadores
-                        </p>
-                        <p class="small text-muted mb-4">
-                            Malla {{ $cancha->color_malla ?? '—' }} ({{ $cancha->altura_malla ?? '—' }}) · Piso {{ $cancha->tipo_piso ?? '—' }}
-                        </p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <strong class="fs-5" style="color: var(--color-primario)">Bs. {{ number_format($cancha->precio_por_hora, 2) }}/h</strong>
-                            <a href="{{ route('canchas.show', $cancha) }}" class="btn btn-sm btn-outline-success rounded-pill px-3">Ver horarios</a>
+
+                        <div class="card-cancha__body">
+                            <h3 class="card-cancha__title">{{ $cancha->nombre }}</h3>
+
+                            <div class="card-cancha__details">
+                                <div class="card-cancha__detail">
+                                    <span class="card-cancha__detail-icon" aria-hidden="true">
+                                        <i class="bi bi-geo-alt"></i>
+                                    </span>
+                                    <span>{{ $cancha->ubicacion ?? 'Ubicación disponible al consultar' }}</span>
+                                </div>
+
+                            </div>
+
+                            <div class="card-cancha__footer">
+                                <div class="card-cancha__price">
+                                    <span>Precio por hora</span>
+                                    <strong>
+                                        Bs. {{ number_format($cancha->precio_por_hora, 2) }}
+                                        <small>/ hora</small>
+                                    </strong>
+                                </div>
+
+                                <a class="card-cancha__action" href="{{ route('canchas.show', $cancha) }}">
+                                    Ver disponibilidad
+                                    <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                                </a>
+                            </div>
                         </div>
+                    </article>
+                </div>
+            @empty
+                <div class="col-12">
+                    <div class="welcome-courts__empty">
+                        <span class="welcome-courts__empty-icon" aria-hidden="true">
+                            <i class="bi bi-calendar2-check"></i>
+                        </span>
+                        <h3>Próximamente tendremos canchas disponibles</h3>
+                        <p>Estamos preparando nuestros espacios para que puedas reservarlos.</p>
                     </div>
                 </div>
-            </div>
-        @endforeach
-    </div>
+            @endforelse
+        </div>
 
-    <div class="text-center mt-5">
-        <a href="{{ route('canchas.index') }}" class="btn btn-lg px-5 fw-semibold rounded-pill text-white" style="background: var(--color-primario)">
-            Ver todas las canchas
-        </a>
+        @if ($canchasDestacadas->isNotEmpty())
+            <div class="welcome-courts__more">
+                <a class="welcome-courts__more-btn" href="{{ route('canchas.index') }}">
+                    Ver todas las canchas
+                    <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                </a>
+            </div>
+        @endif
+    </div>
+</section>
+
+<div class="welcome-balls">
+    <div class="container">
+        @include('balones.partials.cards', [
+            'balones' => $balones,
+            'version' => $version,
+            'vistaCompleta' => true,
+            'compacto' => true,
+        ])
     </div>
 </div>
-
-@include('balones.partials.cards', compact('balones', 'version'))
 
 {{-- CTA final --}}
 <div class="cta-wally text-white">

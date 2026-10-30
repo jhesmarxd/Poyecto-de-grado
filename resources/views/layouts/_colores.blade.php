@@ -1,4 +1,4 @@
-@php($colores = $colores ?? \App\Models\Ajuste::colores())
+@php($colores = config('theme.colors'))
 <style>
     :root {
         --color-primario: {{ $colores['color_primario'] }};
@@ -17,9 +17,7 @@
         --bs-dark-rgb: {{ $colores['color_oscuro_rgb'] }};
     }
 
-    /* Conecta los colores dinámicos con los tokens 2026. Mismo
-       selector (especificidad) que los tokens para ganarles al
-       venir después en la cascada (este <style> va tras el CSS). */
+    /* Conecta los colores definidos en config/theme.php con los tokens 2026. */
     :root[data-theme="light"],
     :root[data-theme="dark"] {
         --primary: var(--color-primario);

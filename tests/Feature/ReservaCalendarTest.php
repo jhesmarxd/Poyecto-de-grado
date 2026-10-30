@@ -57,7 +57,7 @@ class ReservaCalendarTest extends TestCase
             ->assertOk()->assertSee('data-role="cliente"', false)->assertSee('Listado');
     }
 
-    public function test_el_administrador_recibe_el_detalle_completo_y_estado_google(): void
+    public function test_el_administrador_recibe_el_detalle_completo_sin_estado_google(): void
     {
         Http::preventStrayRequests();
         $admin = User::factory()->create(['rol' => User::ROL_ADMIN]);
@@ -68,23 +68,13 @@ class ReservaCalendarTest extends TestCase
             'telefono' => '70000001',
         ]);
         $reserva = $this->reserva($cliente);
-        GoogleCalendarEvent::create([
-            'reserva_id' => $reserva->id,
-            'calendar_id' => 'primary',
-            'google_event_id' => 'evento-prueba',
-            'google_event_url' => 'https://calendar.google.com/calendar/event?eid=prueba',
-            'sync_status' => GoogleCalendarEvent::STATUS_SYNCED,
-        ]);
-
         $response = $this->actingAs($admin)->getJson(route('admin.reservas.eventos', $this->rango()));
 
         $response->assertOk()
             ->assertJsonPath('0.extendedProps.cliente', 'Cliente Agenda')
             ->assertJsonPath('0.extendedProps.correo', 'agenda@example.com')
             ->assertJsonPath('0.extendedProps.telefono', '70000001')
-            ->assertJsonPath('0.extendedProps.monto', 'Bs. 85.00')
-            ->assertJsonPath('0.extendedProps.google_estado', 'Sincronizada')
-            ->assertJsonPath('0.extendedProps.google_url', 'https://calendar.google.com/calendar/event?eid=prueba');
+            ->assertJsonPath('0.extendedProps.monto', 'Bs. 85.00');
         $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
         $this->assertStringEndsWith('-04:00', $response->json('0.start'));
     }
@@ -111,15 +101,24 @@ class ReservaCalendarTest extends TestCase
         $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE]);
         $otro = User::factory()->create(['rol' => User::ROL_CLIENTE]);
         $propia = $this->reserva($cliente);
+        GoogleCalendarEvent::create([
+            'reserva_id' => $propia->id,
+            'calendar_id' => 'primary',
+            'google_event_id' => 'evento-propio',
+            'google_event_url' => 'https://calendar.google.com/calendar/event?eid=propia',
+            'sync_status' => GoogleCalendarEvent::STATUS_SYNCED,
+        ]);
         $this->reserva($otro, '2026-10-11');
 
         $response = $this->actingAs($cliente)->getJson(route('reservas.mis.eventos', $this->rango()));
 
         $response->assertOk()->assertJsonCount(1)->assertJsonPath('0.id', (string) $propia->id);
         $this->assertSame(
-            ['estado', 'cancha', 'fecha', 'hora_inicio', 'hora_fin'],
+            ['estado', 'cancha', 'fecha', 'hora_inicio', 'hora_fin', 'google_estado', 'google_url'],
             array_keys($response->json('0.extendedProps'))
         );
+        $response->assertJsonPath('0.extendedProps.google_estado', 'Agendada en Google Calendar')
+            ->assertJsonPath('0.extendedProps.google_url', 'https://calendar.google.com/calendar/event?eid=propia');
     }
 
     public function test_el_fin_del_rango_es_exclusivo_y_los_filtros_se_aplican(): void

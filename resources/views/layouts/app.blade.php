@@ -36,25 +36,30 @@
 
     @stack('styles')
 </head>
-<body data-active="{{ $__active ?? 'dashboard' }}">
-    <div class="shell">
+@php
+    $route = request()->route() ? request()->route()->getName() : '';
+    $isClientUi = Auth::check() && Auth::user()->rol === \App\Models\User::ROL_CLIENTE;
+@endphp
+<body class="{{ $isClientUi ? 'client-ui' : '' }}" data-active="{{ $__active ?? 'dashboard' }}">
+    <a class="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
+    <div class="shell {{ $isClientUi ? 'client-shell' : '' }}">
         {{-- ============ SIDEBAR ============ --}}
         <aside class="d-sidebar">
-            <div class="brand">
+            <a class="brand" href="{{ $isClientUi ? route('home') : (Auth::user()->esAdministrador() ? route('admin.dashboard') : route('recepcionista.reservas.hoy')) }}">
                 <div class="brand-logo">
+                    @if ($isClientUi)
+                        <x-wally-mark size="sm" />
+                    @else
                     <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
                         <path fill="#ffffff" d="M14.747 9.125c.527-1.426 1.736-2.573 3.317-2.573c1.643 0 2.792 1.085 3.318 2.573l6.077 16.867c.186.496.248.931.248 1.147c0 1.209-.992 2.046-2.139 2.046c-1.303 0-1.954-.682-2.264-1.611l-.931-2.915h-8.62l-.93 2.884c-.31.961-.961 1.642-2.232 1.642c-1.24 0-2.294-.93-2.294-2.17c0-.496.155-.868.217-1.023l6.233-16.867zm.34 11.256h5.891l-2.883-8.992h-.062l-2.946 8.992z"/>
                     </svg>
+                    @endif
                 </div>
                 <div class="brand-text">
                     <div class="brand-name">{{ config('app.name', 'Wally Reservas') }}</div>
-                    <div class="brand-tag">reservas · chatbot</div>
+                    <div class="brand-tag">{{ $isClientUi ? 'canchas de Wally' : 'reservas · chatbot' }}</div>
                 </div>
-            </div>
-
-            @php
-                $route = request()->route() ? request()->route()->getName() : '';
-            @endphp
+            </a>
 
             @include('layouts._sidebar_navigation', ['route' => $route])
 
@@ -68,6 +73,15 @@
                         <div class="workspace-role">{{ \App\Models\User::ROLES[Auth::user()->rol] ?? ucfirst(Auth::user()->rol) }}</div>
                     </div>
                 </div>
+                @if ($isClientUi)
+                    <form action="{{ route('logout') }}" method="POST" class="client-sidebar-logout">
+                        @csrf
+                        <button type="submit">
+                            <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                            <span>Cerrar sesión</span>
+                        </button>
+                    </form>
+                @endif
                 @else
                 <div class="workspace">
                     <div class="workspace-text">
@@ -82,12 +96,21 @@
         {{-- ============ MAIN ============ --}}
         <div class="main">
             <header class="d-topbar">
-                <div class="crumbs">
+                <div class="crumbs {{ $isClientUi ? 'client-crumbs' : '' }}">
+                    @if ($isClientUi)
+                    <a class="client-mobile-brand" href="{{ route('home') }}" aria-label="Wally Reservas, mi panel">
+                        <x-wally-mark size="xs" />
+                        <span>Wally <strong>Reservas</strong></span>
+                    </a>
+                    @else
                     <button class="hamburger" data-drawer-open aria-label="Abrir navegación">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                     </button>
+                    @endif
+                    @unless ($isClientUi)
                     <span>{{ config('app.name', 'Wally Reservas') }}</span>
                     <svg class="sep" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+                    @endunless
                     <span class="current">@yield('title', 'Panel')</span>
                 </div>
 
@@ -134,7 +157,7 @@
                 </div>
             </header>
 
-            <main class="content">
+            <main class="content" id="contenido-principal" tabindex="-1">
                 @if (session('status'))
                     <div data-crud-status="{{ session('status') }}" class="d-none" aria-hidden="true"></div>
                 @endif
@@ -162,6 +185,10 @@
             </footer>
         </div>
     </div>
+
+    @if ($isClientUi)
+        @include('layouts._client_bottom_navigation', ['route' => $route])
+    @endif
 
     @include('chatbot.widget')
 

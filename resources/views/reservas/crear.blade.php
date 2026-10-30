@@ -3,44 +3,35 @@
 @section('title', 'Confirmar reserva')
 
 @section('content')
-    <div class="hero container-wide">
-        <div class="hero-text">
-            <span class="eyebrow">Reservas · Confirmar</span>
-            <h1 class="hero-title">Confirmar <span class="accent">reserva</span></h1>
-            <p class="hero-sub">Revisa los datos, elige el balón con el que jugarás y confirma.</p>
-        </div>
-    </div>
+    <div class="client-page client-booking-page">
+        <header class="client-page-header">
+            <a class="client-back-link" href="{{ route('disponibilidad.index', ['cancha_id' => $cancha->id, 'fecha' => $fecha]) }}" aria-label="Volver a disponibilidad">
+                <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            </a>
+            <div class="client-page-header__icon" aria-hidden="true"><i class="bi bi-calendar2-check"></i></div>
+            <div>
+                <span class="client-kicker">Último paso</span>
+                <h1>Confirma tu <span>reserva</span></h1>
+                <p>Revisa la información, elige un balón y confirma cuando estés listo.</p>
+            </div>
+        </header>
 
-    <div class="container-wide">
-        <div class="grid">
-            <div class="card col-12">
-                <div class="card-head">
-                    <div class="card-title-wrap">
-                        <span class="eyebrow">Detalle</span>
-                        <h3 class="card-title">Tu reserva</h3>
-                    </div>
+        <div class="client-booking-layout">
+            <aside class="booking-summary card" aria-labelledby="booking-summary-title">
+                <div class="booking-summary__head">
+                    <span class="booking-summary__icon" aria-hidden="true"><i class="bi bi-receipt"></i></span>
+                    <div><span class="client-kicker">Resumen</span><h2 id="booking-summary-title">Tu reserva</h2></div>
                 </div>
-
-                <dl class="row mb-4">
-                    <dt class="col-sm-4">Cancha</dt>
-                    <dd class="col-sm-8">{{ $cancha->nombre }}</dd>
-
-                    <dt class="col-sm-4">Fecha</dt>
-                    <dd class="col-sm-8">
-                        {{ \Carbon\Carbon::parse($fecha)->translatedFormat('l d \d\e F \d\e Y') }}
-                    </dd>
-
-                    <dt class="col-sm-4">Hora</dt>
-                    <dd class="col-sm-8">
-                        {{ \Carbon\Carbon::parse($horario->hora_inicio)->format('H:i') }}
-                        – {{ \Carbon\Carbon::parse($horario->hora_fin)->format('H:i') }}
-                    </dd>
-
-                    <dt class="col-sm-4">Precio base</dt>
-                    <dd class="col-sm-8">Bs. {{ number_format($cancha->precio_por_hora, 2) }} / hora
-                        <span class="small text-muted">(si traes tu propio balón)</span></dd>
+                <dl class="booking-summary__list">
+                    <div><dt><i class="bi bi-grid-3x2" aria-hidden="true"></i> Cancha</dt><dd>{{ $cancha->nombre }}</dd></div>
+                    <div><dt><i class="bi bi-calendar3" aria-hidden="true"></i> Fecha</dt><dd>{{ \Carbon\Carbon::parse($fecha)->translatedFormat('l d \d\e F \d\e Y') }}</dd></div>
+                    <div><dt><i class="bi bi-clock" aria-hidden="true"></i> Horario</dt><dd>{{ \Carbon\Carbon::parse($horario->hora_inicio)->format('H:i') }} – {{ \Carbon\Carbon::parse($horario->hora_fin)->format('H:i') }}</dd></div>
+                    <div><dt><i class="bi bi-cash-coin" aria-hidden="true"></i> Precio base</dt><dd>Bs. {{ number_format($cancha->precio_por_hora, 2) }} / hora</dd></div>
                 </dl>
+                <p class="booking-summary__note"><i class="bi bi-info-circle" aria-hidden="true"></i> El total puede cambiar según el balón que elijas.</p>
+            </aside>
 
+            <section class="booking-form card" aria-labelledby="booking-ball-title">
                 <form method="POST" action="{{ route('reservas.store') }}">
                     @csrf
                     <input type="hidden" name="cancha_id" value="{{ $cancha->id }}">
@@ -48,25 +39,28 @@
                     <input type="hidden" name="fecha" value="{{ $fecha }}">
                     <input type="hidden" name="balon_id" id="balon_id" value="">
 
-                    <div class="field mb-3">
-                        <label class="field-label">Elige el balón con el que jugarás</label>
+                    <div class="booking-form__heading">
+                        <span class="booking-form__step">1</span>
+                        <div>
+                            <span class="client-kicker">Elige cómo jugarás</span>
+                            <h2 id="booking-ball-title">Selecciona un balón</h2>
+                            <p>Puedes traer el tuyo o elegir uno disponible del catálogo.</p>
+                        </div>
+                    </div>
 
-                        <div class="row g-4 mb-2">
-                            <div class="col-md-6 col-lg-3">
-                                <label class="balon-pick h-100">
+                    <div class="field booking-ball-field">
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-6 col-xl-4">
+                                <label class="balon-pick h-100 ball-choice ball-choice--own">
                                     <input type="radio" class="visually-hidden" name="balon_seleccion" id="balon-propio"
                                            value="" data-precio="{{ (float) $cancha->precio_por_hora }}" data-tipo="propio"
                                            checked>
-                                    <div class="card balon-card h-100 border-0 shadow-sm rounded-4">
-                                        <div class="card-body d-flex flex-column align-items-center justify-content-center text-center p-3"
-                                             style="min-height: 180px; background: rgba(var(--color-primario-rgb), 0.05);">
-                                            <i class="bi bi-person-walking display-4 mb-2 text-muted"></i>
-                                            <h3 class="h6 fw-bold mb-1">Traigo mi propio balón</h3>
-                                            <p class="small text-muted mb-2">Tarifa base de la cancha</p>
-                                            <span class="badge rounded-pill text-bg-success">
-                                                Bs. {{ number_format($cancha->precio_por_hora, 2) }} / h
-                                            </span>
-                                        </div>
+                                    <div class="card balon-card h-100">
+                                        <span class="ball-choice__check" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
+                                        <span class="ball-choice__icon" aria-hidden="true"><i class="bi bi-person-walking"></i></span>
+                                        <h3>Traigo mi propio balón</h3>
+                                        <p>Solo pagas la tarifa base de la cancha.</p>
+                                        <strong>Bs. {{ number_format($cancha->precio_por_hora, 2) }} / hora</strong>
                                     </div>
                                 </label>
                             </div>
@@ -83,26 +77,29 @@
                             <span class="invalid-feedback d-block" role="alert"><strong>{{ $message }}</strong></span>
                         @enderror
 
-                        <div class="alert alert-info mt-3 mb-0" role="alert">
-                            <strong>Total por hora:</strong> <span id="total-hora">Bs. {{ number_format($cancha->precio_por_hora, 2) }}</span>
-                            <span class="small text-muted">(el monto de la reserva se calcula con la tarifa del balón elegido)</span>
+                        <div class="booking-total" role="status" aria-live="polite">
+                            <span><i class="bi bi-wallet2" aria-hidden="true"></i> Total por hora</span>
+                            <strong id="total-hora">Bs. {{ number_format($cancha->precio_por_hora, 2) }}</strong>
                         </div>
                     </div>
 
-                    <div class="field mb-3">
+                    <div class="field booking-observations">
                         <label for="observaciones" class="field-label">Observaciones (opcional)</label>
-                        <textarea name="observaciones" id="observaciones" class="form-control" rows="2"
-                                  placeholder="Ej.: queremos jugar con 6 personas…"></textarea>
+                        <span class="field-help">Añade aquí cualquier información que debamos conocer.</span>
+                        <textarea name="observaciones" id="observaciones" class="form-control" rows="3"
+                                  placeholder="Ejemplo: jugaremos seis personas"></textarea>
                     </div>
 
-                    <div class="form-actions">
+                    <div class="form-actions booking-actions">
                         <a href="{{ route('disponibilidad.index', ['cancha_id' => $cancha->id, 'fecha' => $fecha]) }}"
-                           class="btn btn--ghost">Volver</a>
+                           class="btn btn--ghost"><i class="bi bi-arrow-left" aria-hidden="true"></i> Volver</a>
                         <span class="spacer"></span>
-                        <button type="submit" class="btn btn--primary">Confirmar reserva</button>
+                        <button type="submit" class="btn btn--primary">
+                            <i class="bi bi-check-circle" aria-hidden="true"></i> Confirmar reserva
+                        </button>
                     </div>
                 </form>
-            </div>
+            </section>
         </div>
     </div>
 @endsection

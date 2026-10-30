@@ -21,7 +21,6 @@ class CanchaManagementTest extends TestCase
             ->post(route('admin.canchas.store'), [
                 'nombre' => 'Cancha Principal',
                 'descripcion' => 'Cancha techada',
-                'capacidad' => 12,
                 'precio_por_hora' => 50,
                 'estado' => Cancha::ESTADO_DISPONIBLE,
                 'tipo_recinto' => 'cerrada',

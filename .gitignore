@@ -25,3 +25,13 @@ Thumbs.db
 __pycache__/
 *.py[cod]
 ~$*.docx
+
+# Archivos de entorno y configuraciones privadas
+.env.*
+!.env.example
+.env.testing
+
+# Archivos temporalesy de desarrollo
+/.codex-docx-work/
+/evidencias/
+/scratch/

@@ -1,0 +1,129 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 3 - Diagrama Entidad-Relación: Configuración, Google Calendar, Notificaciones, Ajustes
+
+entity "configuracion_reservas" as Config {
+    * id : BIGINT <<PK>>
+    --
+    * clave : VARCHAR(100) <<UK>>
+    * valor : JSON
+    * descripcion : TEXT
+    * tipo : VARCHAR(50)
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+}
+
+entity "cierres_cancha" as Cierres {
+    * id : BIGINT <<PK>>
+    --
+    * cancha_id : BIGINT <<FK>>
+    * fecha_inicio : DATE
+    * fecha_fin : DATE
+    * motivo : VARCHAR(255)
+    * recurrente : BOOLEAN
+    * dia_semana : TINYINT <<NULLABLE>>
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+}
+
+entity "reservas_afectadas_configuracion" as ReservasAfectadas {
+    * id : BIGINT <<PK>>
+    --
+    * reserva_id : BIGINT <<FK>>
+    * cambio_id : BIGINT <<FK>>
+    * accion_tomada : ENUM('reprogramada','cancelada','notificada')
+    * estado_anterior : VARCHAR(50)
+    * estado_nuevo : VARCHAR(50)
+    * created_at : TIMESTAMP
+}
+
+entity "google_calendar_connections" as GCalConn {
+    * id : BIGINT <<PK>>
+    --
+    * calendar_id : VARCHAR(255)
+    * enabled : BOOLEAN
+    * access_token : TEXT
+    * refresh_token : TEXT <<NULLABLE>>
+    * expires_at : TIMESTAMP <<NULLABLE>>
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+}
+
+entity "google_calendar_events" as GCalEvents {
+    * id : BIGINT <<PK>>
+    --
+    * reserva_id : BIGINT <<FK>>
+    * calendar_id : VARCHAR(255)
+    * google_event_id : VARCHAR(255)
+    * sync_status : ENUM('pending','synced','error','deleted')
+    * last_error : TEXT <<NULLABLE>>
+    * last_synced_at : TIMESTAMP <<NULLABLE>>
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+}
+
+entity "notifications" as Notifications {
+    * id : CHAR(36) <<PK, UUID>>
+    --
+    * type : VARCHAR(255)
+    * notifiable_type : VARCHAR(255)
+    * notifiable_id : BIGINT
+    * data : JSON
+    * read_at : TIMESTAMP <<NULLABLE>>
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+}
+
+entity "ajustes" as Ajustes {
+    * clave : VARCHAR(100) <<PK>>
+    --
+    * valor : TEXT
+    * tipo : VARCHAR(50)
+    * descripcion : TEXT <<NULLABLE>>
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+}
+
+Canchas ||--o{ Cierres : "1:N"
+Reservas ||--o{ ReservasAfectadas : "1:N"
+ConfiguracionReserva ||--o{ ReservasAfectadas : "1:N (cambio_id)"
+Reservas ||--o| GCalEvents : "1:1"
+GCalConn ||--o{ GCalEvents : "1:N (calendar_id)"
+
+note right of Config
+    Claves ejemplo:
+    - duraciones_permitidas: [60,90,120]
+    - anticipacion_minima_horas: 2
+    - anticipacion_maxima_dias: 30
+    - ventana_cancelacion_horas: 4
+    - permitir_checkin_antes_minutos: 15
+end note
+
+note right of Cierres
+    Índices:
+    - PRIMARY KEY (id)
+    - FOREIGN KEY (cancha_id) REFERENCES canchas(id) ON DELETE CASCADE
+    - INDEX (cancha_id, fecha_inicio, fecha_fin)
+    - INDEX (recurrente, dia_semana)
+end note
+
+note right of GCalEvents
+    Índices:
+    - PRIMARY KEY (id)
+    - FOREIGN KEY (reserva_id) REFERENCES reservas(id) ON DELETE CASCADE
+    - UNIQUE (reserva_id)
+    - INDEX (sync_status)
+    - INDEX (google_event_id)
+end note
+
+note right of Notifications
+    Polimórfico: notifiable_type + notifiable_id
+    Ej: App\Models\User, App\Models\Reserva
+    Índices:
+    - PRIMARY KEY (id)
+    - INDEX (notifiable_type, notifiable_id)
+    - INDEX (read_at)
+end note
+
+@enduml

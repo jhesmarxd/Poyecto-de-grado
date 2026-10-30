@@ -1,0 +1,38 @@
+@startuml
+autonumber
+actor "Administrador" as Admin
+boundary "Vista Usuarios\n(admin/usuarios/create.blade.php)" as View
+control "UserController" as Controller
+control "StoreUserRequest" as Request
+entity "User" as Model
+database "Base de Datos\n(users)" as DB
+
+Admin -> View : Completa formulario (nombre, email, rol, pass)
+Admin -> View : Clic en "Guardar usuario"
+View -> Controller : POST /admin/usuarios
+activate Controller
+
+Controller -> Request : validate()
+activate Request
+Request -> DB : SELECT COUNT(*) FROM users WHERE email = ?
+DB --> Request : Retorna conteo (debe ser 0)
+alt Correo duplicado o campos vacíos
+    Request --> View : Retorna errores de validación
+    View --> Admin : Muestra error: "Este email ya está registrado"
+else Validación exitosa
+    Request --> Controller : validatedData()
+    deactivate Request
+
+    Controller -> Controller : authorize('create', User::class)
+    Controller -> Model : create(data + [estado => true])
+    activate Model
+    Model -> DB : INSERT INTO users (name, email, rol, password, estado...)
+    DB --> Model : Confirmación de inserción (ID generado)
+    Model --> Controller : Retorna instancia User creada
+    deactivate Model
+
+    Controller --> View : RedirectResponse a /admin/usuarios con flash('status')
+    View --> Admin : Muestra alerta: "Usuario creado correctamente" en listado
+end
+deactivate Controller
+@enduml

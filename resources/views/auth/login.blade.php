@@ -17,7 +17,7 @@
     </div>
 
     <div class="auth-form">
-        <form method="POST" action="{{ route('login') }}">
+        <form method="POST" action="{{ route('login') }}" class="auth-login-form">
             @csrf
 
             <div class="auth-field" style="animation-delay: 0.1s">
@@ -62,9 +62,6 @@
                     </label>
                 </div>
 
-                @if (Route::has('password.request'))
-                    <a href="{{ route('password.request') }}">¿Olvidaste tu contraseña?</a>
-                @endif
             </div>
 
             <div class="auth-actions" style="animation-delay: 0.4s">

@@ -23,7 +23,6 @@ class CanchaFactory extends Factory
             'nombre' => 'Cancha '.fake()->unique()->city(),
             'descripcion' => fake()->sentence(),
             'ubicacion' => 'Zona '.fake()->randomElement(['Norte', 'Central', 'Sur']),
-            'capacidad' => fake()->numberBetween(2, 6),
             'precio_por_hora' => fake()->randomFloat(2, 30, 120),
             'estado' => Cancha::ESTADO_DISPONIBLE,
             'imagen' => null,

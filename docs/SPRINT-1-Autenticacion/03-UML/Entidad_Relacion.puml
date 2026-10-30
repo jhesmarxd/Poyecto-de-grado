@@ -1,0 +1,57 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 1 - Diagrama Entidad-Relación: Autenticación
+
+entity "users" as Users {
+    * id : BIGINT <<PK>>
+    --
+    * name : VARCHAR(255)
+    * email : VARCHAR(255) <<UK>>
+    * password : VARCHAR(255) <<NULLABLE>>
+    * rol : ENUM('admin','recepcionista','cliente')
+    * email_verified_at : TIMESTAMP <<NULLABLE>>
+    * remember_token : VARCHAR(100) <<NULLABLE>>
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+}
+
+entity "password_reset_tokens" as ResetTokens {
+    * email : VARCHAR(255) <<PK>>
+    --
+    * token : VARCHAR(255)
+    * created_at : TIMESTAMP <<NULLABLE>>
+}
+
+entity "social_accounts" as SocialAccounts {
+    * id : BIGINT <<PK>>
+    --
+    * user_id : BIGINT <<FK>>
+    * provider : VARCHAR(50)
+    * provider_id : VARCHAR(255)
+    * token : TEXT
+    * refresh_token : TEXT <<NULLABLE>>
+    * expires_at : TIMESTAMP <<NULLABLE>>
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+}
+
+Users ||--o{ SocialAccounts : "1:N"
+Users ||--o{ ResetTokens : "1:1 (por email)"
+
+note right of Users
+    Índices:
+    - PRIMARY KEY (id)
+    - UNIQUE (email)
+    - INDEX (rol)
+    - INDEX (email_verified_at)
+end note
+
+note right of SocialAccounts
+    Índices:
+    - PRIMARY KEY (id)
+    - FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    - UNIQUE (provider, provider_id)
+end note
+
+@enduml

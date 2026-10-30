@@ -1,0 +1,40 @@
+@startuml
+start
+:Usuario interactúa con el widget flotante de WallyBot;
+:Ingresa mensaje en lenguaje natural;
+:ChatbotController recibe mensaje y session_id;
+:PoliticaSeguridadChatbot analiza el texto;
+if (¿Detecta inyección o contenido no permitido?) then (Sí)
+    :Retorna respuesta preventiva estándar de seguridad;
+    :Registra evento de seguridad;
+    stop
+else (No)
+    :DetectorIntencion clasifica la intención;
+    :ExtractorEntidades extrae fecha, hora, cancha y número de personas;
+    if (¿Intención es comando de reinicio?) then (Sí)
+        :Limpia contexto conversacional en memoria y BD;
+        :Retorna: "Listo, ¿qué fecha u horario deseas consultar?";
+        stop
+    elseif (¿Intención es consultar disponibilidad?) then (Sí)
+        :Consulta motor de DisponibilidadService;
+        :Formula respuesta con canchas libres y tarifas;
+    elseif (¿Intención es solicitar reserva directa?) then (Sí)
+        if (¿Falta algún dato crítico como fecha u hora?) then (Sí)
+            :Almacena datos parciales en el contexto de la conversación;
+            :Solicita al usuario el dato faltante (ej. "¿Para qué horario?");
+        else (Datos completos)
+            :Valida disponibilidad de la franja solicitada;
+            if (¿Está disponible?) then (Sí)
+                :Genera enlace directo de pre-reserva con parámetros precargados;
+            else (No)
+                :Propone horarios alternativos cercanos;
+            endif
+        endif
+    else (Pregunta general / Saludo / Ayuda)
+        :Genera respuesta contextual amigable sobre reglas y servicios;
+    endif
+endif
+:Persiste mensaje del usuario y del bot con intención y tiempo ms;
+:Renderiza respuesta en interfaz conversacional;
+stop
+@enduml

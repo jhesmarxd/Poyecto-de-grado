@@ -1,0 +1,42 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 1 - Diagrama de Actividades: Registro y Login
+
+|Cliente|
+start
+:Accede a /register;
+:Completa formulario (nombre, email, password, confirmación);
+|Sistema|
+:Valida datos (Request StoreUserRequest);
+if (¿Datos válidos?) then (no)
+    :Retorna errores validación;
+    stop
+else (sí)
+    :Crea User (rol = 'cliente' por defecto);
+    :Genera email verificación;
+    :Envía email verificación;
+endif
+|Cliente|
+:Recibe email → Clic en enlace verificación;
+|Sistema|
+:Marca email_verified_at;
+:Autentica usuario;
+:Redirige según rol;
+stop
+
+|Administrador|
+start
+:Accede a /admin/usuarios;
+|Middleware|
+:EnsureUserIsAdmin → Verifica user->esAdministrador();
+if (¿Es admin?) then (no)
+    :Abort 403;
+    stop
+else (sí)
+    :Lista usuarios con paginación;
+    :Renderiza vista admin.usuarios.index;
+endif
+stop
+
+@enduml

@@ -1,0 +1,55 @@
+@startuml
+skinparam linetype ortho
+
+entity "canchas" as canchas {
+    * id : bigint <<PK>>
+    --
+    * nombre : varchar(100)
+    * descripcion : text
+    * precio_por_hora : decimal(8,2)
+    * estado : enum('disponible','mantenimiento','inactiva')
+    * tipo_recinto : enum('abierta','techada','cerrada')
+    imagen : varchar(255)
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "horarios" as horarios {
+    * id : bigint <<PK>>
+    --
+    * cancha_id : bigint <<FK>>
+    * dia_semana : tinyint (1=Lunes..7=Domingo)
+    * hora_inicio : time
+    * hora_fin : time
+    * disponible : tinyint(1)
+    vigente_desde : date
+    vigente_hasta : date
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "cierre_canchas" as cierres {
+    * id : bigint <<PK>>
+    --
+    * cancha_id : bigint <<FK>>
+    * fecha : date
+    * motivo : varchar(255)
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "balones" as balones {
+    * id : bigint <<PK>>
+    --
+    * nombre : varchar(100)
+    * codigo : varchar(50) <<UK>>
+    * tipo : enum('oficial','entrenamiento','recreativo')
+    * precio_alquiler : decimal(8,2)
+    * estado : enum('disponible','alquilado','mantenimiento')
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+canchas ||--o{ horarios : "1:N (posee franjas)"
+canchas ||--o{ cierres : "1:N (bloqueos temporales)"
+@enduml

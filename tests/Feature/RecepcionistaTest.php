@@ -14,6 +14,18 @@ class RecepcionistaTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 10, 5, 10, 0, 0, 'America/La_Paz'));
+        parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
+    }
+
     private function recepcionista(): User
     {
         return User::factory()->create(['rol' => 'recepcionista']);

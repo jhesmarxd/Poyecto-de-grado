@@ -34,17 +34,38 @@ class LoginController extends Controller
     }
 
     /**
-     * Solo permite autenticar cuentas activas.
+     * Obtiene las credenciales para la autenticación inicial.
      *
      * @return array<string, mixed>
      */
-    protected function credentials(Request $request): array
+     protected function credentials(Request $request): array
+     {
+         return [
+             $this->username() => $request->input($this->username()),
+             'password' => $request->input('password'),
+             'estado' => true,
+         ];
+     }
+
+    /**
+     * Maneja la respuesta en caso de fallo de autenticación.
+     * Diferencia si la cuenta está inactiva/bloqueada o si las credenciales son incorrectas.
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    protected function sendFailedLoginResponse(Request $request)
     {
-        return [
-            $this->username() => $request->input($this->username()),
-            'password' => $request->input('password'),
-            'estado' => true,
-        ];
+        $user = User::where($this->username(), $request->input($this->username()))->first();
+
+        if ($user && ! $user->estaActivo()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                $this->username() => [trans('auth.inactive')],
+            ]);
+        }
+
+        throw \Illuminate\Validation\ValidationException::withMessages([
+            $this->username() => [trans('auth.failed')],
+        ]);
     }
 
     /**

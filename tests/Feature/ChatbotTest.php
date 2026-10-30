@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Balon;
 use App\Models\Cancha;
 use App\Models\Conversacion;
+use App\Models\HorarioSemanal;
 use App\Models\MensajeChatbot;
 use App\Models\Reserva;
 use App\Models\User;
@@ -78,6 +79,16 @@ class ChatbotTest extends TestCase
             ->assertJsonValidationErrors('mensaje');
     }
 
+    public function test_el_endpoint_agrega_estado_y_dato_pendiente_sin_romper_el_contrato_existente(): void
+    {
+        $this->withSession([])->postJson('/chatbot/mensaje', [
+            'mensaje' => '¿Hay cancha de 8 a 10?',
+        ])->assertOk()
+            ->assertJsonPath('estado', 'horario_ambiguo')
+            ->assertJsonPath('dato_pendiente', 'am_pm')
+            ->assertJsonStructure(['respuesta', 'intencion', 'componentes']);
+    }
+
     public function test_el_widget_muestra_el_chat_y_los_accesos_de_autenticacion_a_visitantes(): void
     {
         auth()->logout();
@@ -114,6 +125,10 @@ class ChatbotTest extends TestCase
     public function test_la_respuesta_de_horarios_usa_datos_reales(): void
     {
         $cancha = $this->canchaConHorarios();
+        HorarioSemanal::query()->where('dia_semana', 1)->update([
+            'hora_apertura' => '18:00:00',
+            'hora_cierre' => '19:00:00',
+        ]);
 
         $this->withSession([])
             ->postJson('/chatbot/mensaje', ['mensaje' => "qué horarios tiene la {$cancha->nombre}"])
@@ -201,11 +216,13 @@ class ChatbotTest extends TestCase
         $canchaElegida = $bot->responder('Cancha Prueba', $conversacion);
         $fechaElegida = $bot->responder('el lunes', $conversacion);
         $horaElegida = $bot->responder('7 pm', $conversacion);
+        $duracionElegida = $bot->responder('por 1 hora', $conversacion->fresh());
 
         $this->assertSame(DetectorIntencion::HACER_RESERVA, $canchaElegida['intencion']);
         $this->assertSame(DetectorIntencion::HACER_RESERVA, $fechaElegida['intencion']);
         $this->assertSame(DetectorIntencion::HACER_RESERVA, $horaElegida['intencion']);
-        $this->assertStringContainsString('19:00 – 20:00', $horaElegida['respuesta']);
+        $this->assertStringContainsString('Hasta qué hora', $horaElegida['respuesta']);
+        $this->assertStringContainsString('19:00 – 20:00', $duracionElegida['respuesta']);
         $this->assertSame('19:00:00', $conversacion->fresh()->contexto['hora']);
     }
 
@@ -374,7 +391,7 @@ class ChatbotTest extends TestCase
         $bot = app(ChatbotService::class);
 
         $resumen = $bot->responder(
-            "quiero reservar {$cancha->nombre} el lunes a las 6 con mi balón",
+            "quiero reservar {$cancha->nombre} el lunes a las 6 PM por 1 hora con mi balón",
             $conversacion,
             $cliente,
         );
@@ -408,7 +425,7 @@ class ChatbotTest extends TestCase
         $bot = app(ChatbotService::class);
 
         $bot->responder(
-            "quiero reservar {$cancha->nombre} el lunes a las 6 con mi balón",
+            "quiero reservar {$cancha->nombre} el lunes a las 6 PM por 1 hora con mi balón",
             $conversacion,
             $cliente,
         );
@@ -427,7 +444,7 @@ class ChatbotTest extends TestCase
         $bot = app(ChatbotService::class);
 
         $bot->responder(
-            "quiero reservar {$cancha->nombre} el lunes a las 6 con mi balón",
+            "quiero reservar {$cancha->nombre} el lunes a las 6 PM por 1 hora con mi balón",
             $conversacion,
             $cliente,
         );
@@ -453,7 +470,7 @@ class ChatbotTest extends TestCase
         $bot = app(ChatbotService::class);
 
         $bot->responder(
-            "quiero reservar {$cancha->nombre} el lunes a las 6 con mi balón",
+            "quiero reservar {$cancha->nombre} el lunes a las 6 PM por 1 hora con mi balón",
             $conversacion,
             $cliente,
         );
@@ -488,7 +505,7 @@ class ChatbotTest extends TestCase
         $bot = app(ChatbotService::class);
 
         $resumen = $bot->responder(
-            "quiero reservar {$cancha->nombre} el lunes a las 6 con el Mikasa V200W",
+            "quiero reservar {$cancha->nombre} el lunes a las 6 PM por 1 hora con el Mikasa V200W",
             $conversacion,
             $cliente,
         );
@@ -509,18 +526,18 @@ class ChatbotTest extends TestCase
         $bot = app(ChatbotService::class);
 
         $invitado = $bot->responder(
-            "quiero reservar {$cancha->nombre} el lunes a las 6 con mi balón",
+            "quiero reservar {$cancha->nombre} el lunes a las 6 PM por 1 hora con mi balón",
             Conversacion::create(['contexto' => []]),
         );
         $admin = User::factory()->create(['rol' => User::ROL_ADMIN, 'estado' => true]);
         $administrador = $bot->responder(
-            "quiero reservar {$cancha->nombre} el lunes a las 6 con mi balón",
+            "quiero reservar {$cancha->nombre} el lunes a las 6 PM por 1 hora con mi balón",
             Conversacion::create(['user_id' => $admin->id, 'contexto' => []]),
             $admin,
         );
         $inactivo = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => false]);
         $clienteInactivo = $bot->responder(
-            "quiero reservar {$cancha->nombre} el lunes a las 6 con mi balón",
+            "quiero reservar {$cancha->nombre} el lunes a las 6 PM por 1 hora con mi balón",
             Conversacion::create(['user_id' => $inactivo->id, 'contexto' => []]),
             $inactivo,
         );
@@ -549,7 +566,7 @@ class ChatbotTest extends TestCase
         $this->app->instance(ProveedorExterno::class, $fake);
 
         $respuesta = app(ChatbotService::class)->responder(
-            "reserva {$cancha->nombre} el lunes a las 6 con mi balón",
+            "reserva {$cancha->nombre} el lunes a las 6 PM por 1 hora con mi balón",
             $conversacion,
             $cliente,
         );
@@ -567,7 +584,7 @@ class ChatbotTest extends TestCase
         $bot = app(ChatbotService::class);
 
         $bot->responder(
-            "quiero reservar {$cancha->nombre} el lunes a las 6 con mi balón",
+            "quiero reservar {$cancha->nombre} el lunes a las 6 PM por 1 hora con mi balón",
             $conversacion,
             $cliente,
         );
@@ -600,7 +617,7 @@ class ChatbotTest extends TestCase
         $bot = app(ChatbotService::class);
 
         $bot->responder(
-            "quiero reservar {$cancha->nombre} el lunes a las 6 con Mikasa V300W",
+            "quiero reservar {$cancha->nombre} el lunes a las 6 PM por 1 hora con Mikasa V300W",
             $conversacion,
             $cliente,
         );
@@ -643,7 +660,7 @@ class ChatbotTest extends TestCase
         $bot = app(ChatbotService::class);
 
         $opciones = $bot->responder(
-            "quiero reservar {$cancha->nombre} el lunes a las 6 con balón premium",
+            "quiero reservar {$cancha->nombre} el lunes a las 6 PM por 1 hora con balón premium",
             $conversacion,
             $cliente,
         );
@@ -681,7 +698,7 @@ class ChatbotTest extends TestCase
         $bot = app(ChatbotService::class);
 
         $bot->responder(
-            "quiero reservar {$cancha->nombre} el lunes a las 6 con mi balón",
+            "quiero reservar {$cancha->nombre} el lunes a las 6 PM por 1 hora con mi balón",
             $conversacion,
             $cliente,
         );
@@ -728,7 +745,7 @@ class ChatbotTest extends TestCase
 
         $this->actingAs($cliente)
             ->postJson('/chatbot/mensaje', [
-                'mensaje' => "quiero reservar {$cancha->nombre} el lunes a las 6 con mi balón",
+                'mensaje' => "quiero reservar {$cancha->nombre} el lunes a las 6 PM por 1 hora con mi balón",
             ])
             ->assertOk()
             ->assertJsonPath('intencion', DetectorIntencion::HACER_RESERVA)

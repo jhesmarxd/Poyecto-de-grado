@@ -1,0 +1,95 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class Reserva {
+    +id: bigint
+    +user_id: bigint
+    +cancha_id: bigint
+    +horario_id: bigint
+    +balon_id: bigint
+    +fecha: date
+    +hora_inicio_reserva: time
+    +hora_fin_reserva: time
+    +monto_total: decimal
+    +estado: string
+    +origen: string
+    +checkin_at: timestamp
+    +checkout_at: timestamp
+    +esConfirmada(): bool
+    +esCancelada(): bool
+    +estaActiva(): bool
+}
+
+class ConfiguracionReserva {
+    +id: bigint
+    +minutos_tolerancia_checkin: int
+    +horas_anticipacion_minima: int
+    +dias_anticipacion_maxima: int
+    +limite_reservas_activas_por_cliente: int
+    +obtenerActual(): ConfiguracionReserva
+}
+
+class Conversacion {
+    +id: bigint
+    +user_id: bigint
+    +session_id: string
+    +ip_origen: string
+    +canal: string
+    +estado: string
+    +mensajes(): HasMany
+    +contextoDe(string): mixed
+    +guardarContexto(string, mixed): void
+}
+
+class MensajeChatbot {
+    +id: bigint
+    +conversacion_id: bigint
+    +emisor: string
+    +mensaje: text
+    +intencion_detectada: string
+    +confianza: float
+    +tiempo_respuesta_ms: int
+}
+
+class ReservaService {
+    +crearReserva(array, User): Reserva
+    +cancelarReserva(Reserva, User): bool
+    +periodoOcupado(int, string, string, string): bool
+    +balonOcupado(int, string, Horario, string): bool
+    +sincronizarGoogleCalendar(Reserva): void
+}
+
+class ChatbotService {
+    +responder(string, Conversacion, User): array
+    -ultimaDisponibilidad(Conversacion, string): array
+    -respuestaBloqueada(Conversacion, string): array
+}
+
+class DetectorIntencion {
+    +detectar(string): string
+    +normalizar(string): string
+}
+
+class ExtractorEntidades {
+    +fecha(string): string
+    +hora(string): string
+    +cancha(string): Cancha
+}
+
+class PoliticaSeguridadChatbot {
+    +evaluar(string): string
+}
+
+Reserva "0..*" --> "1" User : pertenece
+Reserva "0..*" --> "1" Cancha : ocupa
+Reserva "0..*" --> "0..1" Balon : incluye
+Conversacion "1" *-- "0..*" MensajeChatbot : registra
+Conversacion "0..*" --> "0..1" User : vincula
+ReservaService ..> Reserva : gestiona transacciones
+ReservaService ..> ConfiguracionReserva : aplica reglas
+ChatbotService ..> DetectorIntencion : clasifica
+ChatbotService ..> ExtractorEntidades : parsea
+ChatbotService ..> PoliticaSeguridadChatbot : protege
+ChatbotService ..> ReservaService : consulta disponibilidad
+ChatbotService ..> Conversacion : almacena contexto
+@enduml

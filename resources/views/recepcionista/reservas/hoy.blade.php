@@ -5,11 +5,13 @@
 @section('content')
 @include('recepcionista._navigation')
 
+    @php($nombreCorto = \Illuminate\Support\Str::before(Auth::user()->name, ' '))
+
     <div class="hero">
         <div class="hero-text">
             <span class="eyebrow">Recepción · Operación diaria</span>
-            <h1 class="hero-title">Agenda <span class="accent">operativa</span></h1>
-            <p class="hero-sub">{{ \Illuminate\Support\Carbon::parse($fecha)->translatedFormat('l d \d\e F \d\e Y') }} · Confirma, registra entradas y finaliza salidas desde una sola pantalla.</p>
+            <h1 class="hero-title">¡Hola, <span>{{ $nombreCorto }}</span>!</h1>
+            <p class="hero-sub">{{ \Illuminate\Support\Carbon::parse($fecha)->translatedFormat('l d \d\e F \d\e Y') }} · Agenda operativa: confirma, registra entradas y finaliza salidas desde una sola pantalla.</p>
         </div>
         <div class="hero-actions">
             <div class="hero-mascot" aria-hidden="true">

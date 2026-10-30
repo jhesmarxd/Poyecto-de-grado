@@ -13,10 +13,6 @@ class BalonSeeder extends Seeder
      */
     public function run(): void
     {
-        // Limpia registros genéricos antiguos (sin marca) que quedaron de la
-        // versión previa donde solo existían "Balón económico" y "Balón premium".
-        Balon::whereNull('marca')->delete();
-
         $balones = [
             // --- Económicos (los presta la dueña) ---
             [

@@ -1,0 +1,54 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 4 - Diagrama de Clases: Chatbot, NLP, Conversaciones, Métricas
+
+$Model(Conversacion, "Conversacion\n- id: BigInteger\n- user_id: BigInteger\n- session_id: String\n- estado: Enum\n- canal: String\n- metadata: JSON\n- lifecycle_state: Enum\n- iniciada_en: DateTime\n- finalizada_en: DateTime\n\n+ user(): BelongsTo\n+ mensajes(): HasMany\n+ ejecuciones(): HasMany\n+ estaActiva(): Bool\n+ agregarMensaje(): MensajeChatbot")
+
+$Model(MensajeChatbot, "MensajeChatbot\n- id: BigInteger\n- conversacion_id: BigInteger\n- rol: Enum (user,assistant,system)\n- contenido: Text\n- entidades: JSON\n- intent: String\n- confidence: Float\n- metadata: JSON\n\n+ conversacion(): BelongsTo")
+
+$Model(ChatbotEjecucion, "ChatbotEjecucion\n- id: BigInteger\n- conversacion_id: BigInteger\n- accion: String\n- parametros: JSON\n- resultado: JSON\n- duracion_ms: Integer\n- exitosa: Boolean\n- error: String\n\n+ conversacion(): BelongsTo")
+
+$Service(ChatbotService, "ChatbotService\n+ procesar(user, mensaje): Respuesta\n+ enviarRespuesta(conversacion, texto): void\n+ manejarIntencion(conversacion, analisis): void\n+ transferirHumano(conversacion): void")
+
+$Service(ChatbotMetricasService, "ChatbotMetricasService\n+ conversacionesTotales(inicio, fin): Int\n+ fallbackRate(inicio, fin): Float\n+ tiempoRespuestaPromedio(inicio, fin): Float\n+ intencionesMasFrecuentes(): Array\n+ satisfaccionPromedio(): Float\n+ conversacionesPorCanal(): Array")
+
+$Service(DetectorIntencion, "DetectorIntencion\n+ detectar(texto): AnalisisNlp\n+ INTENCIONES: Array\n+ UMBRAL_CONFIANZA: Float")
+
+$Service(ExtractorEntidades, "ExtractorEntidades\n+ extraer(texto, intencion): Array\n+ PATRONES_FECHA: Array\n+ PATRONES_HORA: Array\n+ PATRONES_CANCHA: Array")
+
+$Service(ReservaConversacionalService, "ReservaConversacionalService\n+ crearReservaDesdeChat(conversacion, entidades): Reserva\n+ consultarDisponibilidad(entidades): Array\n+ cancelarReservaChat(conversacion, entidades): Bool\n+ obtenerReservasUsuario(user): Collection")
+
+$Service(ConversationLifecycleService, "ConversationLifecycleService\n+ iniciar(user, canal): Conversacion\n+ continuar(conversacion, mensaje): void\n+ finalizar(conversacion): void\n+ transferirHumano(conversacion): void\n+ estaEstancada(conversacion): Bool")
+
+$Service(ChatbotTraceService, "ChatbotTraceService\n+ registrar(traceId, datos): void\n+ obtenerMetricas(inicio, fin): Array\n+ obtenerTraza(traceId): Array\n+ exportarTraces(): String")
+
+$Service(PoliticaSeguridadChatbot, "PoliticaSeguridadChatbot\n+ validar(mensaje): Bool\n+ sanitizar(texto): String\n+ rateLimitExcedido(user): Bool\n+ detectarInyeccion(texto): Bool")
+
+$Service(AnalisisNlp, "AnalisisNlp (Value Object)\n- intencion: String\n- confianza: Float\n- entidades: Array\n- proveedor: String\n- metadata: Array\n\n+ esConfiable(): Bool\n+ getEntidad(tipo): Mixed")
+
+$Controller(ChatbotController, "ChatbotController\n+ webhook(Request): Json\n+ widget(): View\n+ procesarMensaje(Request): Json")
+
+$Controller(AdminChatbotMetricasController, "Admin\\ChatbotMetricasController\n+ index(): View")
+
+$Controller(AdminConversacionController, "Admin\\ConversacionController\n+ index(): View\n+ show(Conversacion): View\n+ tomarControl(Conversacion): Json")
+
+$Service(ProveedorExterno, "ProveedorExterno (Interface)\n+ analizar(texto): AnalisisNlp")
+
+ChatbotService ..> DetectorIntencion : usa >
+ChatbotService ..> ExtractorEntidades : usa >
+ChatbotService ..> ReservaConversacionalService : usa >
+ChatbotService ..> ConversationLifecycleService : usa >
+ChatbotService ..> ChatbotTraceService : usa >
+ChatbotService ..> PoliticaSeguridadChatbot : usa >
+ChatbotService ..> ProveedorExterno : usa >
+DetectorIntencion ..> ProveedorExterno : implementa >
+ExtractorEntidades ..> ProveedorExterno : implementa >
+ReservaConversacionalService ..> ReservaService : usa >
+ChatbotMetricasService --> Conversacion : consulta >
+ChatbotMetricasService --> MensajeChatbot : consulta >
+ChatbotMetricasService --> ChatbotEjecucion : consulta >
+ChatbotTraceService --> ChatbotEjecucion : registra >
+
+$Legend
+@enduml

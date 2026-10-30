@@ -27,7 +27,6 @@ class UpdateCanchaRequest extends FormRequest
             'nombre' => ['required', 'string', 'max:255'],
             'descripcion' => ['nullable', 'string'],
             'ubicacion' => ['nullable', 'string', 'max:255'],
-            'capacidad' => ['required', 'integer', 'min:1', 'max:100'],
             'precio_por_hora' => ['required', 'numeric', 'min:0', 'max:100000'],
             'estado' => ['required', Rule::in(array_keys(Cancha::ESTADOS))],
             'imagen' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:4096'],
@@ -48,9 +47,6 @@ class UpdateCanchaRequest extends FormRequest
         return [
             'nombre.required' => 'El nombre es obligatorio.',
             'nombre.max' => 'El nombre no debe exceder 255 caracteres.',
-            'capacidad.required' => 'La capacidad es obligatoria.',
-            'capacidad.min' => 'La capacidad mínima es 1.',
-            'capacidad.max' => 'La capacidad máxima es 100.',
             'precio_por_hora.required' => 'El precio por hora es obligatorio.',
             'precio_por_hora.min' => 'El precio no puede ser negativo.',
             'precio_por_hora.max' => 'El precio no debe exceder 100,000.',

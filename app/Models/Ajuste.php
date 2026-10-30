@@ -2,17 +2,13 @@
 
 namespace App\Models;
 
-use App\Support\Color;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 class Ajuste extends Model
 {
-    public const CACHE_COLORES = 'ajustes.colores';
-
     public const CACHE_HORARIO_ATENCION = 'ajustes.horario_atencion';
-
-    public const CLAVES_COLORES = ['color_primario', 'color_acento', 'color_oscuro'];
 
     public const CLAVES_HORARIO_ATENCION = [
         'horario_atencion_dia_inicio',
@@ -34,74 +30,6 @@ class Ajuste extends Model
     public $timestamps = false;
 
     /**
-     * Devuelve los colores del tema con sus derivados, usando valores
-     * por defecto cuando el administrador aún no los ha configurado.
-     *
-     * @return array<string, string>
-     */
-    public static function colores(): array
-    {
-        return Cache::remember(self::CACHE_COLORES, 3600, function () {
-            $valores = static::query()
-                ->whereIn('clave', self::CLAVES_COLORES)
-                ->pluck('valor', 'clave')
-                ->all();
-
-            $primario = $valores['color_primario'] ?? '#008C95';
-            $acento = $valores['color_acento'] ?? '#B8E000';
-            $oscuro = $valores['color_oscuro'] ?? '#071A2B';
-
-            return [
-                'color_primario' => $primario,
-                'color_primario_oscuro' => Color::mezclar($primario, -0.18),
-                'color_primario_rgb' => Color::rgbCss($primario),
-                'color_acento' => $acento,
-                'color_acento_oscuro' => Color::mezclar($acento, -0.15),
-                'color_acento_rgb' => Color::rgbCss($acento),
-                'color_oscuro' => $oscuro,
-                'color_oscuro_rgb' => Color::rgbCss($oscuro),
-            ];
-        });
-    }
-
-    /**
-     * Colores seguros cuando la base de datos todavia no esta disponible.
-     *
-     * @return array<string, string>
-     */
-    public static function coloresPorDefecto(): array
-    {
-        $primario = '#008C95';
-        $acento = '#B8E000';
-        $oscuro = '#071A2B';
-
-        return [
-            'color_primario' => $primario,
-            'color_primario_oscuro' => Color::mezclar($primario, -0.18),
-            'color_primario_rgb' => Color::rgbCss($primario),
-            'color_acento' => $acento,
-            'color_acento_oscuro' => Color::mezclar($acento, -0.15),
-            'color_acento_rgb' => Color::rgbCss($acento),
-            'color_oscuro' => $oscuro,
-            'color_oscuro_rgb' => Color::rgbCss($oscuro),
-        ];
-    }
-
-    /**
-     * Guarda los colores configurados e invalida la caché.
-     *
-     * @param  array<string, string>  $colores
-     */
-    public static function guardarColores(array $colores): void
-    {
-        foreach ($colores as $clave => $valor) {
-            static::updateOrCreate(['clave' => $clave], ['valor' => $valor]);
-        }
-
-        Cache::forget(self::CACHE_COLORES);
-    }
-
-    /**
      * Devuelve el horario informativo general sin mezclarlo con las franjas
      * que se utilizan para comprobar disponibilidad y crear reservas.
      *
@@ -109,6 +37,23 @@ class Ajuste extends Model
      */
     public static function horarioAtencion(): ?array
     {
+        if (Schema::hasTable('horarios_semanales')) {
+            $abiertos = HorarioSemanal::query()->where('abierto', true)->orderBy('dia_semana')->get();
+            if ($abiertos->isNotEmpty()) {
+                $primero = $abiertos->first();
+                $ultimo = $abiertos->last();
+
+                return [
+                    'dia_inicio' => $primero->dia_semana,
+                    'dia_fin' => $ultimo->dia_semana,
+                    'dia_inicio_nombre' => Horario::DIAS[$primero->dia_semana],
+                    'dia_fin_nombre' => Horario::DIAS[$ultimo->dia_semana],
+                    'hora_inicio' => substr((string) $abiertos->min('hora_apertura'), 0, 5),
+                    'hora_fin' => substr((string) $abiertos->max('hora_cierre'), 0, 5),
+                ];
+            }
+        }
+
         return Cache::remember(self::CACHE_HORARIO_ATENCION, 3600, function () {
             $valores = static::query()
                 ->whereIn('clave', self::CLAVES_HORARIO_ATENCION)

@@ -21,6 +21,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // --- Validación interactiva de campos incompletos o vacíos ---
+    const authForms = document.querySelectorAll('.auth-login-form, .auth-register-form');
+    authForms.forEach((form) => {
+        const requiredInputs = form.querySelectorAll('input[required]');
+
+        requiredInputs.forEach((input) => {
+            input.addEventListener('invalid', (e) => {
+                if (input.validity.valueMissing) {
+                    const label = input.closest('.auth-field')?.querySelector('label')?.textContent?.trim() || 'este campo';
+                    input.setCustomValidity(`El campo ${label.toLowerCase()} no puede estar vacío.`);
+                } else if (input.validity.typeMismatch && input.type === 'email') {
+                    input.setCustomValidity('Por favor ingrese un correo electrónico válido (ejemplo: usuario@correo.com).');
+                } else {
+                    input.setCustomValidity('');
+                }
+            });
+
+            input.addEventListener('input', () => {
+                input.setCustomValidity('');
+                if (input.classList.contains('is-invalid') && input.value.trim() !== '') {
+                    input.classList.remove('is-invalid');
+                    const feedback = input.closest('.auth-field')?.querySelector('.invalid-feedback');
+                    if (feedback) feedback.style.display = 'none';
+                }
+            });
+        });
+    });
+
     // --- Efecto 3D sutil en la tarjeta (mouse) ---
     const card = document.querySelector('.auth-card');
     if (card && window.matchMedia('(pointer: fine)').matches) {

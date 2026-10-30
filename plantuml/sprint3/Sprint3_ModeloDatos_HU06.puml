@@ -1,0 +1,56 @@
+@startuml
+skinparam linetype ortho
+
+entity "users" as users {
+    * id : bigint <<PK>>
+    --
+    * name : varchar(255)
+    * email : varchar(255) <<UK>>
+    * rol : varchar(50)
+}
+
+entity "conversaciones" as conversaciones {
+    * id : bigint <<PK>>
+    --
+    user_id : bigint <<FK>>
+    * session_id : varchar(100) <<UK>>
+    ip_origen : varchar(45)
+    canal : varchar(50)
+    estado : varchar(50)
+    contexto : json
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "mensajes_chatbot" as mensajes {
+    * id : bigint <<PK>>
+    --
+    * conversacion_id : bigint <<FK>>
+    * emisor : enum('user','bot')
+    * mensaje : text
+    intencion_detectada : varchar(100)
+    confianza : decimal(5,4)
+    tiempo_respuesta_ms : int
+    created_at : timestamp
+}
+
+entity "chatbot_ejecuciones" as ejecuciones {
+    * id : bigint <<PK>>
+    --
+    * conversacion_id : bigint <<FK>>
+    mensaje_id : bigint <<FK>>
+    proveedor : varchar(50)
+    modelo : varchar(100)
+    latencia_ms : int
+    tokens_entrada : int
+    tokens_salida : int
+    costo_usd : decimal(8,6)
+    created_at : timestamp
+}
+
+users ||--o{ conversaciones : "0..1:N (inicia sesion)"
+conversaciones ||--o{ mensajes : "1:N (intercambio)"
+conversaciones ||--o{ ejecuciones : "1:N (auditoria IA)"
+mensajes ||--o| ejecuciones : "1:0..1 (telemetria mensaje)"
+@enduml
+

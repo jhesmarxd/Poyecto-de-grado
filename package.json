@@ -6,7 +6,8 @@
         "build": "vite build",
         "dev": "vite",
         "test:chatbot-js": "node tests/JavaScript/chatbot-http.test.mjs",
-        "test:reservation-timer": "node tests/JavaScript/reservation-countdown.test.mjs"
+        "test:reservation-timer": "node tests/JavaScript/reservation-countdown.test.mjs",
+        "test:reservation-calendar": "node tests/JavaScript/reservation-calendar-responsive.test.mjs"
     },
     "devDependencies": {
         "@popperjs/core": "^2.11.8",

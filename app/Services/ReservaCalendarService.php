@@ -18,7 +18,7 @@ class ReservaCalendarService
         ?int $canchaId = null,
         ?string $estado = null
     ): array {
-        return $this->consultar($inicio, $finExclusivo, $canchaId, $estado, true)
+        return $this->consultar($inicio, $finExclusivo, $canchaId, $estado)
             ->map(fn (Reserva $reserva) => $this->eventoAdministrador($reserva))
             ->all();
     }
@@ -40,7 +40,7 @@ class ReservaCalendarService
         Carbon $finExclusivo,
         ?string $estado = null
     ): array {
-        return $this->consultar($inicio, $finExclusivo, null, $estado, false, $cliente->id)
+        return $this->consultar($inicio, $finExclusivo, null, $estado, true, $cliente->id)
             ->map(fn (Reserva $reserva) => $this->eventoCliente($reserva))
             ->all();
     }
@@ -81,8 +81,6 @@ class ReservaCalendarService
             $reserva,
             $reserva->iniciaEn()->format('H:i').' · '.$reserva->usuario->name.' · '.$reserva->cancha->nombre
         );
-        $google = $reserva->googleCalendarEvent;
-
         $base['extendedProps'] = [
             'estado' => $reserva->estadoLabel(),
             'cliente' => $reserva->usuario->name,
@@ -97,8 +95,6 @@ class ReservaCalendarService
             'observaciones' => $reserva->observaciones,
             'check_in' => $reserva->check_in_at?->format('H:i'),
             'check_out' => $reserva->check_out_at?->format('H:i'),
-            'google_estado' => $this->estadoGoogle($google),
-            'google_url' => $this->urlGoogleSegura($google?->google_event_url),
         ];
 
         return $base;
@@ -129,12 +125,15 @@ class ReservaCalendarService
     private function eventoCliente(Reserva $reserva): array
     {
         $base = $this->eventoBase($reserva, $reserva->cancha->nombre);
+        $google = $reserva->googleCalendarEvent;
         $base['extendedProps'] = [
             'estado' => $reserva->estadoLabel(),
             'cancha' => $reserva->cancha->nombre,
             'fecha' => $reserva->fecha->format('d/m/Y'),
             'hora_inicio' => $reserva->iniciaEn()->format('H:i'),
             'hora_fin' => $reserva->finalizaEn()->format('H:i'),
+            'google_estado' => $this->estadoGoogleCliente($google),
+            'google_url' => $google?->urlSegura(),
         ];
 
         return $base;
@@ -163,6 +162,17 @@ class ReservaCalendarService
     private function hora(string $hora): string
     {
         return substr($hora, 0, 5);
+    }
+
+    private function estadoGoogleCliente(?GoogleCalendarEvent $evento): string
+    {
+        return match ($evento?->sync_status) {
+            GoogleCalendarEvent::STATUS_PENDING => 'Sincronizando con Google Calendar',
+            GoogleCalendarEvent::STATUS_SYNCED => 'Agendada en Google Calendar',
+            GoogleCalendarEvent::STATUS_ERROR => 'No se pudo agendar en Google Calendar',
+            GoogleCalendarEvent::STATUS_CANCELLED, GoogleCalendarEvent::STATUS_DELETED => 'Cita de Google Calendar cancelada',
+            default => 'Aún no agendada en Google Calendar',
+        };
     }
 
     private function estadoGoogle(?GoogleCalendarEvent $evento): string

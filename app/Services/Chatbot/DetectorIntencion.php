@@ -64,7 +64,7 @@ class DetectorIntencion
         ],
         self::CONSULTAR_DISPONIBILIDAD => [
             'disponible', 'disponibilidad', 'libre', 'ocupada', 'ocupado', 'hay lugar',
-            'tienen espacio', 'se puede jugar', 'esta libre', 'hora libre', 'alguna hora',
+            'hay cancha', 'tienen cancha', 'tienen espacio', 'se puede jugar', 'esta libre', 'hora libre', 'alguna hora',
         ],
         self::CONSULTAR_HORARIOS => [
             'horarios', 'horario', 'a que hora', 'que horas', 'abren', 'abre',
@@ -94,6 +94,10 @@ class DetectorIntencion
 
         if ($texto === '') {
             return self::NO_DETECTADA;
+        }
+
+        if (in_array(trim($texto), ['cancha', 'canchas'], true)) {
+            return self::CONSULTAR_DISPONIBILIDAD;
         }
 
         foreach (self::PATRONES as $intencion => $patrones) {

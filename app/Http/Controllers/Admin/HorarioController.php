@@ -7,7 +7,9 @@ use App\Http\Requests\StoreHorarioRequest;
 use App\Http\Requests\UpdateHorarioRequest;
 use App\Models\Cancha;
 use App\Models\CierreCancha;
+use App\Models\ExcepcionReserva;
 use App\Models\Horario;
+use App\Services\ConfiguracionReservaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -17,6 +19,10 @@ use Illuminate\View\View;
 
 class HorarioController extends Controller
 {
+    public function __construct(
+        private readonly ConfiguracionReservaService $configuracionReservas,
+    ) {}
+
     /**
      * Lista de horarios de una cancha (con selector de cancha).
      */
@@ -161,10 +167,19 @@ class HorarioController extends Controller
             'motivo' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $cancha->cierres()->updateOrCreate(
-            ['fecha' => $data['fecha_cierre']],
-            ['motivo' => $data['motivo'] ?? null]
-        );
+        $cambio = $this->configuracionReservas->prepararExcepcion([
+            'cancha_id' => $cancha->id,
+            'fecha' => $data['fecha_cierre'],
+            'tipo' => ExcepcionReserva::CIERRE_COMPLETO,
+            'motivo' => $data['motivo'] ?? 'Cierre excepcional',
+            'mensaje_cliente' => null,
+        ], $request->user());
+
+        if ($cambio->reservasAfectadas->isNotEmpty()) {
+            return redirect()->route('admin.configuracion-reservas.review', $cambio);
+        }
+
+        $this->configuracionReservas->aplicar($cambio);
 
         return back()->with('status', 'Cierre excepcional registrado correctamente.');
     }
@@ -194,6 +209,11 @@ class HorarioController extends Controller
     public function update(UpdateHorarioRequest $request, Cancha $cancha, Horario $horario): RedirectResponse
     {
         $this->authorize('update', $horario);
+        abort_if(
+            $horario->reservas()->activas()->whereDate('fecha', '>=', today())->exists(),
+            422,
+            'Esta franja tiene reservas futuras. Realiza el cambio desde Reglas de reservas y chatbot para revisar los conflictos.'
+        );
 
         $data = $request->validated();
         $data['hora_inicio'] .= ':00';
@@ -212,6 +232,11 @@ class HorarioController extends Controller
     public function destroy(Cancha $cancha, Horario $horario): RedirectResponse
     {
         $this->authorize('delete', $horario);
+        abort_if(
+            $horario->reservas()->activas()->whereDate('fecha', '>=', today())->exists(),
+            422,
+            'Esta franja tiene reservas futuras y no puede eliminarse directamente.'
+        );
 
         $horario->delete();
 

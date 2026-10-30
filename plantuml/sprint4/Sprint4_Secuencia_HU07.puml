@@ -1,0 +1,44 @@
+@startuml
+autonumber
+actor "Administrador" as Admin
+boundary "Vista Reportes\n(admin/reportes/index.blade.php)" as View
+control "ReporteController" as Controller
+control "ReporteService" as Service
+database "Base de Datos\n(reservas, canchas, users)" as DB
+control "StreamedResponse\n(CSV Export)" as Export
+
+Admin -> View : Define filtros: desde, hasta, cancha_id, estado
+Admin -> View : Clic en "Filtrar"
+View -> Controller : GET /admin/reportes?desde=X&hasta=Y&cancha_id=Z&estado=W
+activate Controller
+
+Controller -> Service : rangoFechas(request)
+Service --> Controller : [fechaInicio, fechaFin]
+
+Controller -> Service : reservasConFiltros(request)
+activate Service
+Service -> DB : SELECT * FROM reservas WHERE fecha BETWEEN ? AND ?\nAND cancha_id = ? AND estado = ?\nORDER BY fecha DESC, hora_inicio_reserva DESC
+DB --> Service : Colección de Reservas filtradas
+Service --> Controller : $reservas
+deactivate Service
+
+Controller -> Service : calcularResumen($reservas)
+activate Service
+Service --> Controller : {total, ingresos, confirmadas, canceladas}
+deactivate Service
+
+Controller --> View : view('admin.reportes.index', compact('reservas', 'resumen'...))
+deactivate Controller
+View --> Admin : Muestra tabla detallada y tarjetas de resumen KPI
+
+alt Administrador solicita descarga CSV
+    Admin -> View : Clic en "Exportar CSV"
+    View -> Controller : GET /admin/reportes/exportar?...
+    activate Controller
+    Controller -> Service : exportarCSV(request)
+    Service -> Export : Genera cabeceras CSV (ISO-8859-1 / UTF-8 BOM, delimitador ';')
+    Service -> DB : Procesa en bloques (chunk) para optimizar memoria
+    Export --> Admin : Descarga automática de "reporte-reservas-2026-XX-XX.csv"
+    deactivate Controller
+end
+@enduml

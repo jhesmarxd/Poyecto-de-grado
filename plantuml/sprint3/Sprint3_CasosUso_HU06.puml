@@ -1,0 +1,26 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Cliente" as Cliente
+actor "Administrador" as Admin
+
+rectangle "HU-06: Gestión de Chatbot NLP (WallyBot)" {
+    usecase "CU-06: Gestionar Chatbot NLP (WallyBot)" as CU06
+    usecase "CU-06.1: Consultar Disponibilidad de Canchas" as CU06_Disp
+    usecase "CU-06.2: Consultar Precios y Tarifas" as CU06_Precios
+    usecase "CU-06.3: Guiar Proceso de Reserva por Chat" as CU06_Reserva
+    usecase "CU-06.4: Supervisar Trazas y Conversaciones" as CU06_Audit
+    usecase "CU-06.5: Auditar Métricas de Confianza y Efectividad" as CU06_Metricas
+}
+
+Cliente --> CU06
+CU06 ..> CU06_Disp : <<include>>
+CU06 ..> CU06_Precios : <<include>>
+CU06 ..> CU06_Reserva : <<extend>>
+
+Admin --> CU06_Audit
+Admin --> CU06_Metricas
+@enduml
+

@@ -1,0 +1,61 @@
+@startuml
+skinparam linetype ortho
+
+entity "reservas" as reservas {
+    * id : bigint <<PK>>
+    --
+    * user_id : bigint <<FK>>
+    * cancha_id : bigint <<FK>>
+    * horario_id : bigint <<FK>>
+    * fecha : date
+    * monto_total : decimal(8,2)
+    * estado : enum('pendiente','confirmada','en_curso','completada','cancelada')
+    * origen : enum('web','recepcion','chatbot')
+    checkin_at : timestamp
+    checkout_at : timestamp
+}
+
+entity "canchas" as canchas {
+    * id : bigint <<PK>>
+    --
+    * nombre : varchar(100)
+    * precio_por_hora : decimal(8,2)
+}
+
+entity "conversaciones" as conversaciones {
+    * id : bigint <<PK>>
+    --
+    * session_id : varchar(100)
+    canal : varchar(50)
+    created_at : timestamp
+}
+
+entity "mensajes_chatbot" as mensajes {
+    * id : bigint <<PK>>
+    --
+    * conversacion_id : bigint <<FK>>
+    * emisor : enum('user','bot')
+    intencion_detectada : varchar(100)
+    tiempo_respuesta_ms : int
+    created_at : timestamp
+}
+
+entity "chatbot_ejecuciones" as ejecuciones {
+    * id : bigint <<PK>>
+    --
+    conversacion_id : bigint <<FK>>
+    mensaje_id : bigint <<FK>>
+    proveedor : varchar(50)
+    modelo : varchar(100)
+    latencia_ms : int
+    tokens_entrada : int
+    tokens_salida : int
+    costo_usd : decimal(8,6)
+    created_at : timestamp
+}
+
+canchas ||--o{ reservas : "agrega métricas de uso"
+conversaciones ||--o{ mensajes : "genera historial de auditoría"
+conversaciones ||--o{ ejecuciones : "registra telemetría"
+mensajes ||--o{ ejecuciones : "trazabilidad de inferencia"
+@enduml

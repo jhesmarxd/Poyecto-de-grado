@@ -14,11 +14,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
-            UserSeeder::class,
-            CanchaSeeder::class,
-            BalonSeeder::class,
-            ReservaSeeder::class,
-        ]);
+        $this->command?->info(
+            'No se cargaron datos de demostracion. Para una base vacia use DemoDatabaseSeeder de forma explicita.'
+        );
     }
 }

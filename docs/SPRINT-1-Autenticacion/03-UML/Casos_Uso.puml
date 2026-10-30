@@ -1,0 +1,50 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 1 - Diagrama de Casos de Uso: Autenticación y Roles
+
+$Actor(Cliente, "Cliente")
+$Actor(Admin, "Administrador")
+$Actor(Sistema, "Sistema")
+
+rectangle "Autenticación" {
+    usecase "Registrarse" as UC1
+    usecase "Iniciar Sesión" as UC2
+    usecase "Recuperar Contraseña" as UC3
+    usecase "Cerrar Sesión" as UC4
+}
+
+rectangle "Gestión Usuarios (Admin)" {
+    usecase "Listar Usuarios" as UC5
+    usecase "Crear Usuario" as UC6
+    usecase "Editar Usuario" as UC7
+    usecase "Cambiar Rol" as UC8
+    usecase "Desactivar Usuario" as UC9
+}
+
+rectangle "Perfil" {
+    usecase "Ver Perfil" as UC10
+    usecase "Editar Perfil" as UC11
+    usecase "Cambiar Contraseña" as UC12
+}
+
+Cliente --> UC1
+Cliente --> UC2
+Cliente --> UC3
+Cliente --> UC4
+Cliente --> UC10
+Cliente --> UC11
+Cliente --> UC12
+
+Admin --> UC5
+Admin --> UC6
+Admin --> UC7
+Admin --> UC8
+Admin --> UC9
+
+UC3 ..> UC2 : <<include>>
+UC6 ..> UC8 : <<include>>
+UC7 ..> UC8 : <<extend>>
+
+$Legend
+@enduml

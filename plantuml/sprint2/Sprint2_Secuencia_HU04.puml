@@ -1,0 +1,38 @@
+@startuml
+autonumber
+actor "Administrador" as Admin
+boundary "Vista Horarios\n(admin/horarios/create.blade.php)" as View
+control "HorarioController" as Controller
+control "StoreHorarioRequest" as FormRequest
+entity "Horario" as Model
+database "Base de Datos\n(horarios)" as DB
+
+Admin -> View : Selecciona Cancha, día_semana (1-7), hora_inicio, hora_fin
+Admin -> View : Clic en "Guardar Horario"
+View -> Controller : POST /admin/canchas/{cancha}/horarios
+activate Controller
+
+Controller -> FormRequest : validated()
+activate FormRequest
+FormRequest -> DB : Consulta solapamiento:\nWHERE cancha_id = ? AND dia_semana = ?\nAND hora_inicio < nueva_fin AND hora_fin > nueva_inicio
+DB --> FormRequest : Registros coincidentes
+
+alt Existe solapamiento horario (colisión)
+    FormRequest --> View : Retorna error: "La franja horaria se superpone con un horario existente"
+    View --> Admin : Muestra error en campo hora_fin y no persiste
+else Sin solapamiento y hora_fin > hora_inicio
+    FormRequest --> Controller : Datos validados
+    deactivate FormRequest
+
+    Controller -> Model : cancha->horarios()->create(data)
+    activate Model
+    Model -> DB : INSERT INTO horarios (cancha_id, dia_semana, hora_inicio, hora_fin, disponible...)
+    DB --> Model : Confirmación de inserción (ID horario)
+    Model --> Controller : Horario creado
+    deactivate Model
+
+    Controller --> View : RedirectResponse a /admin/horarios?cancha_id=X con status("Horario creado correctamente.")
+    View --> Admin : Muestra franja horaria agregada en la grilla semanal
+end
+deactivate Controller
+@enduml

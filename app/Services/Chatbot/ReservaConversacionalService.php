@@ -8,6 +8,7 @@ use App\Models\Conversacion;
 use App\Models\Horario;
 use App\Models\Reserva;
 use App\Models\User;
+use App\Services\PoliticaReservasService;
 use App\Services\ReservaService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -24,11 +25,24 @@ class ReservaConversacionalService
 
     public function __construct(
         private readonly ReservaService $reservaService,
+        private readonly PoliticaReservasService $politicaReservas,
     ) {}
 
     public function tieneBorrador(Conversacion $conversacion): bool
     {
         return is_array($conversacion->contextoDe(self::CONTEXTO_BORRADOR));
+    }
+
+    public function reiniciar(Conversacion $conversacion): void
+    {
+        $contexto = $conversacion->contexto ?? [];
+        foreach ([
+            self::CONTEXTO_BORRADOR, 'intencion_pendiente', 'cancha_id', 'fecha',
+            'hora', 'hora_fin', 'duracion_minutos', 'ambiguedad_horaria',
+        ] as $clave) {
+            unset($contexto[$clave]);
+        }
+        $conversacion->update(['contexto' => $contexto]);
     }
 
     public function procesar(
@@ -57,6 +71,25 @@ class ReservaConversacionalService
             ? $borradorExistente
             : $this->nuevoBorrador($conversacion);
 
+        if (($borrador['estado'] ?? null) === 'confirmar_cancha') {
+            if ($this->esRespuestaNegativa($mensaje)) {
+                unset($borrador['cancha_sugerida_id']);
+                $borrador['estado'] = 'recopilando';
+                $this->guardarBorrador($conversacion, $borrador);
+
+                return $this->pedirCancha();
+            }
+            if ($this->esConfirmacionExplicita($mensaje) || Str::contains($this->normalizar($mensaje), ['si', 'dale', 'esta bien'])) {
+                $borrador['cancha_id'] = $borrador['cancha_sugerida_id'];
+                unset($borrador['cancha_sugerida_id']);
+                $borrador['estado'] = 'recopilando';
+            } else {
+                $sugerida = Cancha::find($borrador['cancha_sugerida_id'] ?? null);
+
+                return '¿Quieres continuar con '.($sugerida?->nombre ?? 'la cancha sugerida').'? Responde sí o elige otra cancha.';
+            }
+        }
+
         if (($borrador['estado'] ?? null) === 'confirmacion') {
             if ($this->esRespuestaNegativa($mensaje)) {
                 $this->descartarBorrador($conversacion);
@@ -68,13 +101,71 @@ class ReservaConversacionalService
                 return $this->confirmar($borrador, $conversacion, $usuario);
             }
 
-            return $this->resumenConfirmacion($borrador)
-                .' Para registrarla debes decir “sí, confirmar”; si no la quieres, di “no”.';
+            if (! $canchaDetectada && ! $fechaDetectada && ! $horaDetectada && ! $horaFinDetectada) {
+                return $this->resumenConfirmacion($borrador)
+                    .' Para registrarla debes decir “sí, confirmar”; si no la quieres, di “no”.';
+            }
+
+            $borrador['estado'] = 'recopilando';
         }
 
         $this->incorporarEntidades($borrador, $canchaDetectada, $fechaDetectada, $horaDetectada, $horaFinDetectada);
 
+        $fechaInicial = $this->resolverFecha($borrador);
+        if (! $fechaInicial) {
+            $this->guardarBorrador($conversacion, $borrador);
+
+            return '¿Para qué fecha deseas reservar? Si no indicas otra, puedo revisar hoy.';
+        }
+        if ($errorFecha = $this->politicaReservas->validarFecha($fechaInicial)) {
+            unset($borrador['fecha'], $borrador['hora'], $borrador['hora_fin'], $borrador['horario_id'], $borrador['balon_id'], $borrador['balon_elegido']);
+            $this->guardarBorrador($conversacion, $borrador);
+
+            return $errorFecha->mensaje;
+        }
+        $prefijoCancha = $canchaDetectada ? "Perfecto, anoté *{$canchaDetectada->nombre}*. " : '';
+
+        if (empty($borrador['hora'])) {
+            $this->guardarBorrador($conversacion, $borrador);
+
+            return $prefijoCancha.'¿A qué hora aproximadamente te gustaría empezar?';
+        }
+        if (empty($borrador['hora_fin'])) {
+            $this->guardarBorrador($conversacion, $borrador);
+
+            return $prefijoCancha.'¿Hasta qué hora deseas reservar o cuánto tiempo quieres jugar? Puedes indicar 60, 90 o 120 minutos.';
+        }
+
         $cancha = $this->resolverCancha($borrador);
+        if (! $cancha) {
+            $fechaConsulta = $this->resolverFecha($borrador);
+            $inicioConsulta = $borrador['hora'] ?? null;
+            $finConsulta = $borrador['hora_fin'] ?? null;
+            if ($fechaConsulta && $inicioConsulta && $finConsulta) {
+                $resultado = $this->politicaReservas->consultarRango($fechaConsulta, $inicioConsulta, $finConsulta);
+                if ($resultado->canchas->count() === 1) {
+                    $cancha = $resultado->canchas->first();
+                    $borrador['cancha_id'] = $cancha->id;
+                } elseif ($resultado->canchas->count() > 1) {
+                    $nombres = $resultado->canchas->pluck('nombre')->join(' y ');
+                    if (Str::contains($this->normalizar($mensaje), ['cualquiera', 'me da igual', 'la que este libre', 'no importa'])) {
+                        $sugerida = $resultado->canchas->first();
+                        $borrador['cancha_sugerida_id'] = $sugerida->id;
+                        $borrador['estado'] = 'confirmar_cancha';
+                        $this->guardarBorrador($conversacion, $borrador);
+
+                        return "{$nombres} están disponibles. ¿Quieres continuar con {$sugerida->nombre}?";
+                    }
+                    $this->guardarBorrador($conversacion, $borrador);
+
+                    return "{$nombres} están disponibles durante todo el horario. ¿Cuál prefieres?";
+                } else {
+                    $this->guardarBorrador($conversacion, $borrador);
+
+                    return $resultado->mensaje;
+                }
+            }
+        }
         if (! $cancha) {
             unset($borrador['cancha_id'], $borrador['horario_id'], $borrador['balon_id'], $borrador['balon_elegido']);
             $this->guardarBorrador($conversacion, $borrador);
@@ -100,6 +191,12 @@ class ReservaConversacionalService
         }
 
         $borrador['fecha'] = $fecha;
+        if ($errorFecha = $this->politicaReservas->validarFecha($fecha)) {
+            unset($borrador['fecha'], $borrador['hora'], $borrador['hora_fin'], $borrador['horario_id'], $borrador['balon_id'], $borrador['balon_elegido']);
+            $this->guardarBorrador($conversacion, $borrador);
+
+            return $errorFecha->mensaje;
+        }
         $libres = $cancha->horariosDisponiblesPara($fecha);
         if ($libres->isEmpty()) {
             unset($borrador['hora'], $borrador['hora_fin'], $borrador['horario_id'], $borrador['balon_id'], $borrador['balon_elegido']);
@@ -110,12 +207,21 @@ class ReservaConversacionalService
                 .'. Dime otra fecha o elige otra cancha.';
         }
 
+        if (! empty($borrador['hora']) && empty($borrador['hora_fin'])) {
+            $this->guardarBorrador($conversacion, $borrador);
+
+            return '¿Hasta qué hora deseas reservar o cuánto tiempo quieres jugar? Puedes indicar 60, 90 o 120 minutos.';
+        }
+
         $horario = $this->resolverHorario($borrador, $libres);
         if (! $horario) {
+            $horaPedida = $borrador['hora'] ?? null;
             unset($borrador['hora'], $borrador['hora_fin'], $borrador['horario_id'], $borrador['balon_id'], $borrador['balon_elegido']);
             $this->guardarBorrador($conversacion, $borrador);
 
-            return $this->pedirHorario($cancha, $fecha, $libres);
+            $motivo = $horaPedida ? "El horario de las {$this->formatoHora($horaPedida)} en *{$cancha->nombre}* ya no está libre. " : '';
+
+            return $motivo.$this->pedirHorario($cancha, $fecha, $libres);
         }
 
         $borrador['horario_id'] = $horario->id;
@@ -127,7 +233,7 @@ class ReservaConversacionalService
             unset($borrador['hora'], $borrador['hora_fin'], $borrador['horario_id'], $borrador['balon_id'], $borrador['balon_elegido']);
             $this->guardarBorrador($conversacion, $borrador);
 
-            return 'El rango solicitado no está libre de forma continua. '.$this->pedirHorario($cancha, $fecha, $libres);
+            return "El bloque de {$this->formatoHora($horario->hora_inicio)} a {$this->formatoHora($horaFin)} no está disponible de forma continua en *{$cancha->nombre}*. ".$this->pedirHorario($cancha, $fecha, $libres);
         }
         $borrador['hora_fin'] = $horaFin;
 
@@ -187,11 +293,17 @@ class ReservaConversacionalService
 
         if ($fecha && ($borrador['fecha'] ?? null) !== $fecha) {
             $borrador['fecha'] = $fecha;
-            unset($borrador['hora'], $borrador['hora_fin'], $borrador['horario_id'], $borrador['balon_id'], $borrador['balon_elegido']);
+            if (! $hora) {
+                unset($borrador['hora'], $borrador['hora_fin']);
+            }
+            unset($borrador['horario_id'], $borrador['balon_id'], $borrador['balon_elegido']);
         }
 
         if ($hora && ($borrador['hora'] ?? null) !== $hora) {
             $borrador['hora'] = $hora;
+            if (! $horaFin) {
+                unset($borrador['hora_fin']);
+            }
             unset($borrador['horario_id'], $borrador['balon_id'], $borrador['balon_elegido']);
         }
 
@@ -479,6 +591,9 @@ class ReservaConversacionalService
         if (($contexto['intencion_pendiente'] ?? null) === DetectorIntencion::HACER_RESERVA) {
             unset($contexto['intencion_pendiente']);
         }
+        foreach (['hora', 'hora_fin', 'duracion_minutos', 'horario_id', 'balon_id', 'balon_elegido', 'cancha_sugerida_id', 'alternativa_sugerida', 'dato_pendiente', 'resultado_disponibilidad'] as $clave) {
+            unset($contexto[$clave]);
+        }
         $conversacion->update(['contexto' => $contexto]);
     }
 
@@ -508,7 +623,7 @@ class ReservaConversacionalService
         }
     }
 
-    private function esConfirmacionExplicita(string $mensaje): bool
+    public function esConfirmacionExplicita(string $mensaje): bool
     {
         $texto = $this->normalizar($mensaje);
 
@@ -518,7 +633,7 @@ class ReservaConversacionalService
         ], true);
     }
 
-    private function esRespuestaNegativa(string $mensaje): bool
+    public function esRespuestaNegativa(string $mensaje): bool
     {
         $texto = $this->normalizar($mensaje);
 

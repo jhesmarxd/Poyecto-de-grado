@@ -1,0 +1,88 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 3 - Diagrama de Casos de Uso: Configuración, Integraciones y Reportes
+
+$Actor(Admin, "Administrador")
+$Actor(Cliente, "Cliente")
+$Actor(Recepcionista, "Recepcionista")
+$Actor(GoogleCalendar, "Google Calendar")
+$Actor(Sistema, "Sistema")
+
+rectangle "Configuración Reservas (Admin)" {
+    usecase "Ver Configuración Actual" as UC1
+    usecase "Editar Políticas" as UC2
+    usecase "Revisar Impacto Cambios" as UC3
+    usecase "Aplicar Cambios" as UC4
+    usecase "Gestionar Cierres Cancha" as UC5
+}
+
+rectangle "Google Calendar (Admin)" {
+    usecase "Conectar Cuenta Google" as UC6
+    usecase "Desconectar Cuenta" as UC7
+    usecase "Sincronizar Reservas" as UC8
+    usecase "Ver Estado Sync" as UC9
+}
+
+rectangle "Dashboard y Reportes (Admin)" {
+    usecase "Ver Dashboard KPIs" as UC10
+    usecase "Generar Reporte Ocupación" as UC11
+    usecase "Generar Reporte Ingresos" as UC12
+    usecase "Exportar a Excel/PDF" as UC13
+}
+
+rectangle "Disponibilidad Pública (Cliente)" {
+    usecase "Ver Calendario Disponibilidad" as UC14
+    usecase "Filtrar por Fecha/Cancha" as UC15
+}
+
+rectangle "Notificaciones" {
+    usecase "Recibir Notificación Reserva" as UC16
+    usecase "Marcar como Leída" as UC17
+    usecase "Ver Historial Notificaciones" as UC18
+}
+
+rectangle "Jobs Asíncronos (Sistema)" {
+    usecase "Recordatorios Diarios" as J1
+    usecase "Sync Google Calendar" as J2
+    usecase "Reprogramación Masiva" as J3
+}
+
+Admin --> UC1
+Admin --> UC2
+Admin --> UC3
+Admin --> UC4
+Admin --> UC5
+Admin --> UC6
+Admin --> UC7
+Admin --> UC8
+Admin --> UC9
+Admin --> UC10
+Admin --> UC11
+Admin --> UC12
+Admin --> UC13
+
+Cliente --> UC14
+Cliente --> UC15
+Cliente --> UC16
+Cliente --> UC17
+Cliente --> UC18
+
+Recepcionista --> UC16
+Recepcionista --> UC17
+Recepcionista --> UC18
+
+UC4 ..> UC5 : <<include>>
+UC4 ..> J3 : <<include>>
+UC8 ..> J2 : <<include>>
+UC11 ..> UC13 : <<extend>>
+UC12 ..> UC13 : <<extend>>
+
+Sistema --> J1
+Sistema --> J2
+Sistema --> J3
+
+GoogleCalendar <.. J2 : Sync bidireccional
+
+$Legend
+@enduml

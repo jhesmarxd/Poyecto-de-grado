@@ -177,7 +177,7 @@ class ReservaController extends Controller
         $this->authorize('changeStatus', $reserva);
 
         $nuevoEstado = $request->validate([
-            'estado' => ['required', 'in:'.implode(',', array_keys(Reserva::ESTADOS))],
+            'estado' => ['required', 'in:'.implode(',', array_keys(Reserva::ESTADOS_GESTIONABLES))],
         ])['estado'];
 
         $this->reservaService->cambiarEstado($reserva, $nuevoEstado);

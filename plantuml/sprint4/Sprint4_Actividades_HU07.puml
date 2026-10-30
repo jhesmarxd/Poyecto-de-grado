@@ -1,0 +1,29 @@
+@startuml
+start
+:Administrador ingresa a la sección de reportes y analítica;
+if (¿Qué vista desea consultar?) then (Dashboard Ejecutivo /admin)
+    :EstadisticasService calcula métricas consolidadas;
+    :Obtiene total de reservas, reservas activas e ingresos proyectados;
+    :Construye series de tiempo: reservasPorDia() y reservasPorEstado();
+    :Calcula ranking canchasMasUsadas();
+    :Renderiza gráficos interactivos Chart.js en la pantalla;
+elseif (Métricas del Chatbot NLP /admin/chatbot/metricas)
+    :ChatbotMetricasService consulta ejecuciones y mensajes_chatbot;
+    :Calcula porcentaje de intenciones detectadas y tasa de fallback;
+    :Mide tiempo promedio de respuesta (latencia en ms);
+    :Despliega indicadores de efectividad conversacional;
+else (Reporte Detallado de Reservas /admin/reportes)
+    :Selecciona parámetros de filtrado (rango de fechas, cancha, estado);
+    :Presiona "Filtrar";
+    :ReporteService invierte el rango si fecha_hasta es anterior a fecha_desde;
+    :Ejecuta consulta filtrada en base de datos;
+    :Calcula resumen estadístico (conteo total, ingresos facturados);
+    :Despliega listado paginado con datos del cliente y cancha;
+    if (¿Desea exportar los datos?) then (Sí)
+        :Presiona "Exportar CSV";
+        :Genera flujo de streaming HTTP con encabezados RFC 4180;
+        :Descarga archivo compatible con Excel;
+    endif
+endif
+stop
+@enduml

@@ -1,0 +1,24 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Administrador" as Admin
+
+rectangle "HU-07: Reportes y Estadísticas" {
+    usecase "CU-07: Reportes y Estadísticas" as CU07
+    usecase "CU-07.1: Consultar Métricas y KPI en Dashboard" as CU07_Kpi
+    usecase "CU-07.2: Visualizar Gráficos de Ocupación e Ingresos" as CU07_Graficos
+    usecase "CU-07.3: Filtrar Reservas por Rango, Cancha y Estado" as CU07_Filtros
+    usecase "CU-07.4: Exportar Reportes a Formatos PDF y Excel" as CU07_Export
+    usecase "CU-07.5: Supervisar Métricas y Trazas de WallyBot" as CU07_BotMetricas
+}
+
+Admin --> CU07
+CU07 ..> CU07_Kpi : <<include>>
+CU07 ..> CU07_Graficos : <<include>>
+CU07 ..> CU07_Filtros : <<include>>
+CU07 ..> CU07_Export : <<extend>>
+CU07 ..> CU07_BotMetricas : <<include>>
+@enduml
+

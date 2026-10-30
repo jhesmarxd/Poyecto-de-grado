@@ -1,62 +1,113 @@
 const confirmedForms = new WeakSet();
 
-const assets = {
-    create: '/img/iconos/calendario%20reserva%20animacion.gif',
-    edit: '/img/iconos/actualizando%20.gif',
-    delete: '/img/iconos/gestion-de-residuos.gif',
-    loading: '/img/iconos/cargando.gif',
-    success: '/img/iconos/animacion%20de%20carga%20balon%20voley%20.gif',
-};
-
-function actionFor(form) {
+/**
+ * Determines the CRUD action type ('create' | 'edit' | 'delete')
+ * based on explicit dataset attributes, HTTP method overrides, submit button cues, and URL.
+ */
+function actionFor(form, submitter) {
+    // 1. Explicit action override on submit button or form element
+    if (submitter?.dataset?.confirmAction) return submitter.dataset.confirmAction;
     if (form.dataset.confirmAction) return form.dataset.confirmAction;
 
+    // 2. HTTP method override via hidden _method input (standard Laravel RESTful forms)
     const override = form.querySelector('input[name="_method"]')?.value?.toUpperCase();
     const method = override || (form.method || 'GET').toUpperCase();
-    const target = `${form.action} ${form.textContent}`.toLowerCase();
 
-    if (method === 'DELETE' || /eliminar|cancelar|desvincular/.test(target)) return 'delete';
-    if (['PUT', 'PATCH'].includes(method) || /estado|checkin|checkout|reintentar|sincronizar/.test(target)) return 'edit';
+    if (method === 'DELETE') return 'delete';
 
+    // 3. Submitter button attributes and semantics (if submitted by clicking a specific button)
+    if (submitter) {
+        const submitText = (submitter.textContent || submitter.value || '').trim().toLowerCase();
+        const submitClass = submitter.className || '';
+
+        // Delete / remove / danger button
+        if (
+            /eliminar|borrar|baja|desvincular|remover/.test(submitText) ||
+            submitClass.includes('btn-danger') ||
+            submitClass.includes('btn--danger') ||
+            submitClass.includes('text-danger')
+        ) {
+            return 'delete';
+        }
+
+        // Edit / update button
+        if (/actualizar|editar|modificar/.test(submitText)) {
+            return 'edit';
+        }
+
+        // Save / create / store button
+        if (/guardar|crear|registrar|agregar|nuevo|publicar|aplicar/.test(submitText)) {
+            return ['PUT', 'PATCH'].includes(method) ? 'edit' : 'create';
+        }
+    }
+
+    // 4. HTTP method: PUT or PATCH indicates an update/edit operation
+    if (['PUT', 'PATCH'].includes(method)) return 'edit';
+
+    // 5. Action URL inspection
+    const actionUrl = (form.getAttribute('action') || form.action || '').toLowerCase();
+    if (/(eliminar|destroy|delete|baja)/.test(actionUrl)) return 'delete';
+    if (/(editar|update|modificar)/.test(actionUrl)) return 'edit';
+    if (/(crear|guardar|store|nuevo|registrar)/.test(actionUrl)) return 'create';
+
+    // 6. State or operational action keywords
+    if (/estado|checkin|checkout|reintentar|sincronizar/.test(actionUrl)) return 'edit';
+
+    // 7. Default standard POST to 'create'
     return 'create';
 }
 
+/**
+ * Provides standardized copy, native SweetAlert2 icon, and cohesive brand button colors.
+ */
 function copyFor(action) {
     const copies = {
         create: {
-            title: '¿Confirmar creación?',
+            title: '¿Confirmar registro?',
             text: 'Revisa los datos antes de guardar el nuevo registro.',
-            confirm: 'Sí, crear',
+            confirm: 'Sí, guardar',
+            icon: 'question',
+            confirmButtonColor: '#008C95', // Wally Teal Brand Color
+            cancelButtonColor: '#64748B',  // Slate Gray
         },
         edit: {
-            title: '¿Confirmar cambios?',
-            text: 'Se guardarán los cambios realizados.',
+            title: '¿Guardar cambios?',
+            text: 'Se actualizarán los datos con la información modificada.',
             confirm: 'Sí, actualizar',
+            icon: 'question',
+            confirmButtonColor: '#008C95', // Wally Teal Brand Color
+            cancelButtonColor: '#64748B',  // Slate Gray
         },
         delete: {
-            title: '¿Confirmar esta acción?',
-            text: 'Esta acción puede liberar o eliminar información relacionada.',
-            confirm: 'Sí, continuar',
+            title: '¿Confirmar eliminación?',
+            text: 'Esta acción no se puede deshacer y eliminará el registro.',
+            confirm: 'Sí, eliminar',
+            icon: 'warning',
+            confirmButtonColor: '#EF4444', // Danger Red
+            cancelButtonColor: '#64748B',  // Slate Gray
         },
     };
 
-    return copies[action] || copies.edit;
+    return copies[action] || copies.create;
 }
 
+/**
+ * Displays a clean, vector-animated SweetAlert2 confirmation dialog.
+ */
 async function confirmForm(form, options = {}) {
-    const action = options.action || actionFor(form);
+    const submitter = options.submitter;
+    const action = options.action || actionFor(form, submitter);
     const copy = copyFor(action);
+
     const result = await window.Swal.fire({
         title: options.title || form.dataset.confirmTitle || copy.title,
         text: options.text || form.dataset.confirmText || copy.text,
-        imageUrl: assets[action] || assets.edit,
-        imageWidth: 92,
-        imageHeight: 92,
-        imageAlt: '',
+        icon: options.icon || form.dataset.confirmIcon || copy.icon,
         showCancelButton: true,
         confirmButtonText: options.confirmText || copy.confirm,
         cancelButtonText: 'Cancelar',
-        confirmButtonColor: action === 'delete' ? '#dc3545' : '#005547',
+        confirmButtonColor: options.confirmButtonColor || copy.confirmButtonColor,
+        cancelButtonColor: options.cancelButtonColor || copy.cancelButtonColor,
         reverseButtons: true,
         focusCancel: action === 'delete',
     });
@@ -65,13 +116,13 @@ async function confirmForm(form, options = {}) {
 
     window.Swal.fire({
         title: 'Procesando…',
-        text: 'Espera un momento.',
-        imageUrl: assets.loading,
-        imageWidth: 82,
-        imageHeight: 82,
+        text: 'Por favor, espera un momento.',
         allowOutsideClick: false,
         allowEscapeKey: false,
         showConfirmButton: false,
+        didOpen: () => {
+            window.Swal.showLoading();
+        },
     });
 
     return true;
@@ -92,7 +143,7 @@ export function initCrudDialogs(root = document) {
 
         event.preventDefault();
         const submitter = event.submitter;
-        if (await confirmForm(form)) {
+        if (await confirmForm(form, { submitter })) {
             confirmedForms.add(form);
             form.requestSubmit(submitter || undefined);
         }
@@ -101,13 +152,11 @@ export function initCrudDialogs(root = document) {
     const feedback = root.querySelector('[data-crud-status]');
     if (feedback?.dataset.crudStatus) {
         window.Swal.fire({
-            title: 'Operación completada',
+            icon: 'success',
+            title: '¡Operación exitosa!',
             text: feedback.dataset.crudStatus,
-            imageUrl: assets.success,
-            imageWidth: 92,
-            imageHeight: 92,
             confirmButtonText: 'Aceptar',
-            confirmButtonColor: '#005547',
+            confirmButtonColor: '#008C95',
         });
     }
 

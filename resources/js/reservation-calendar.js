@@ -38,17 +38,17 @@ function detailContent(role, props) {
             ['Cliente', props.cliente], ['Correo', props.correo], ['Teléfono', props.telefono],
             ...common, ['Balón', props.balon], ['Importe', props.monto],
             ['Observaciones', props.observaciones], ['Check-in', props.check_in],
-            ['Check-out', props.check_out], ['Google Calendar', props.google_estado],
+            ['Check-out', props.check_out],
         ]
         : role === 'recepcionista'
             ? [
                 ['Cliente', props.cliente], ['Teléfono', props.telefono], ...common,
                 ['Balón', props.balon], ['Check-in', props.check_in], ['Check-out', props.check_out],
             ]
-            : common;
+            : [...common, ['Google Calendar', props.google_estado]];
     rows.forEach(([label, value]) => content.append(textRow(label, value)));
 
-    if (role === 'administrador') {
+    if (role === 'cliente') {
         const url = safeGoogleUrl(props.google_url);
         if (url) {
             const link = document.createElement('a');
@@ -63,8 +63,13 @@ function detailContent(role, props) {
     return content;
 }
 
-function calendarView() {
-    return window.innerWidth <= MOBILE_BREAKPOINT ? 'listWeek' : 'dayGridMonth';
+export function calendarViewForViewport(role, width) {
+    if (role === 'cliente') return 'dayGridMonth';
+    return width <= MOBILE_BREAKPOINT ? 'listWeek' : 'dayGridMonth';
+}
+
+function calendarView(role) {
+    return calendarViewForViewport(role, window.innerWidth);
 }
 
 function initCalendar(root) {
@@ -85,7 +90,7 @@ function initCalendar(root) {
         plugins: [window.FullCalendar.luxonPlugin],
         locale: window.FullCalendar.esLocale,
         timeZone: root.dataset.timeZone || 'America/La_Paz',
-        initialView: calendarView(),
+        initialView: calendarView(role),
         height: 'auto',
         nowIndicator: true,
         navLinks: true,
@@ -97,7 +102,7 @@ function initCalendar(root) {
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay',
+            right: role === 'cliente' ? '' : 'dayGridMonth,timeGridWeek,timeGridDay',
         },
         buttonText: { today: 'Hoy', month: 'Mes', week: 'Semana', day: 'Día', list: 'Agenda' },
         events(fetchInfo, success, failure) {
@@ -149,7 +154,7 @@ function initCalendar(root) {
             const mobile = window.innerWidth <= MOBILE_BREAKPOINT;
             if (mobile !== lastMobileState) {
                 lastMobileState = mobile;
-                calendar.changeView(mobile ? 'listWeek' : 'dayGridMonth');
+                calendar.changeView(calendarViewForViewport(role, window.innerWidth));
             }
         }, 180);
     });

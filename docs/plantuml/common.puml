@@ -1,0 +1,134 @@
+' ============================================================================
+' PLANTUML COMMON STYLES — Sistema de Reservas de Canchas Wally
+' ============================================================================
+' Incluir en cada diagrama: !include ../plantuml/common.puml
+' ============================================================================
+
+' --- Temas y fuentes ---
+!define THEME_URL https://raw.githubusercontent.com/plantuml-stdlib/PlantUML-stdlib/master
+!include THEME_URL/C4-PlantUML/C4_Context.puml
+!include THEME_URL/C4-PlantUML/C4_Container.puml
+!include THEME_URL/C4-PlantUML/C4_Component.puml
+
+skinparam defaultFontName "JetBrains Mono"
+skinparam defaultFontSize 11
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' --- Colores por Sprint ---
+!define SPRINT1_COLOR #2E86DE
+!define SPRINT2_COLOR #27AE60
+!define SPRINT3_COLOR #F39C12
+!define SPRINT4_COLOR #E74C3C
+
+' --- Estilos de componentes ---
+skinparam component {
+    BackgroundColor<<Controller>> #E8F4FD
+    BorderColor<<Controller>> #2E86DE
+    BackgroundColor<<Service>> #E8F8F0
+    BorderColor<<Service>> #27AE60
+    BackgroundColor<<Model>> #FEF9E7
+    BorderColor<<Model>> #F39C12
+    BackgroundColor<<Middleware>> #FADBD8
+    BorderColor<<Middleware>> #E74C3C
+    BackgroundColor<<Job>> #EBDEF0
+    BorderColor<<Job>> #8E44AD
+    BackgroundColor<<Policy>> #D6EAF8
+    BorderColor<<Policy>> #3498DB
+    BackgroundColor<<Rule>> #F5EEF8
+    BorderColor<<Rule>> #9B59B6
+}
+
+skinparam rectangle {
+    BackgroundColor<<Actor>> #FFFFFF
+    BorderColor<<Actor>> #2C3E50
+}
+
+skinparam database {
+    BackgroundColor #F8F9FA
+    BorderColor #6C757D
+}
+
+skinparam queue {
+    BackgroundColor #EBDEF0
+    BorderColor #8E44AD
+}
+
+' --- Macros reutilizables ---
+
+!procedure $Actor($alias, $label)
+actor $alias as $label <<Actor>>
+!endprocedure
+
+!procedure $System($alias, $label, $color)
+rectangle $alias as $label <<System>> #$color
+!endprocedure
+
+!procedure $Controller($alias, $label)
+component $alias as $label <<Controller>>
+!endprocedure
+
+!procedure $Service($alias, $label)
+component $alias as $label <<Service>>
+!endprocedure
+
+!procedure $Model($alias, $label)
+component $alias as $label <<Model>>
+!endprocedure
+
+!procedure $Middleware($alias, $label)
+component $alias as $label <<Middleware>>
+!endprocedure
+
+!procedure $Job($alias, $label)
+component $alias as $label <<Job>>
+!endprocedure
+
+!procedure $Policy($alias, $label)
+component $alias as $label <<Policy>>
+!endprocedure
+
+!procedure $Rule($alias, $label)
+component $alias as $label <<Rule>>
+!endprocedure
+
+!procedure $DB($alias, $label)
+database $alias as $label
+!endprocedure
+
+!procedure $Queue($alias, $label)
+queue $alias as $label
+!endprocedure
+
+' --- Leyenda estándar ---
+!procedure $Legend
+legend right
+    |= Estereotipo |= Significado |=
+    | <<Actor>> | Usuario externo (Cliente, Admin, Recepcionista) |
+    | <<Controller>> | Controlador HTTP (recibe request, devuelve response) |
+    | <<Service>> | Servicio de dominio (lógica de negocio, transacciones) |
+    | <<Model>> | Modelo Eloquent (entidad + relaciones + scopes) |
+    | <<Middleware>> | Middleware HTTP (autorización, validación) |
+    | <<Job>> | Job asíncrono (cola, reintentos, idempotencia) |
+    | <<Policy>> | Policy Laravel (autorización granular) |
+    | <<Rule>> | Validation Rule (regla de negocio a nivel BD) |
+    | <<System>> | Sistema externo (Google Calendar, NLP Provider) |
+endlegend
+!endprocedure
+
+' --- Estilo de flechas ---
+skinparam ArrowColor #2C3E50
+skinparam ArrowThickness 1.5
+skinparam SequenceArrowThickness 2
+skinparam SequenceParticipantPadding 30
+skinparam SequenceBoxBorderColor #2C3E50
+
+' --- Notas ---
+skinparam note {
+    BackgroundColor #FFFFF0
+    BorderColor #F39C12
+    FontSize 10
+}

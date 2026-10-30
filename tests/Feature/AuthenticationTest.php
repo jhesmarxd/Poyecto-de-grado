@@ -51,11 +51,30 @@ class AuthenticationTest extends TestCase
             'password' => bcrypt('Password123!'),
         ]);
 
-        $this->post('/login', [
+        $response = $this->from('/login')->post('/login', [
             'email' => $user->email,
             'password' => 'ClaveIncorrecta',
         ]);
 
+        $response->assertRedirect('/login');
+        $response->assertSessionHasErrors([
+            'email' => __('auth.failed'),
+        ]);
+        $this->assertGuest();
+    }
+
+    public function test_el_formulario_de_login_requiere_correo_y_contrasena(): void
+    {
+        $response = $this->from('/login')->post('/login', [
+            'email' => '',
+            'password' => '',
+        ]);
+
+        $response->assertRedirect('/login');
+        $response->assertSessionHasErrors([
+            'email' => __('validation.required', ['attribute' => 'correo electrónico']),
+            'password' => __('validation.required', ['attribute' => 'contraseña']),
+        ]);
         $this->assertGuest();
     }
 
@@ -66,11 +85,15 @@ class AuthenticationTest extends TestCase
             'estado' => false,
         ]);
 
-        $this->post('/login', [
+        $response = $this->from('/login')->post('/login', [
             'email' => $user->email,
             'password' => 'Password123!',
         ]);
 
+        $response->assertRedirect('/login');
+        $response->assertSessionHasErrors([
+            'email' => __('auth.inactive'),
+        ]);
         $this->assertGuest();
     }
 

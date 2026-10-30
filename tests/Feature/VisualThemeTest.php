@@ -47,15 +47,6 @@ class VisualThemeTest extends TestCase
             ->assertDontSee(route('auth.google.redirect'), false);
     }
 
-    public function test_recuperar_password_conserva_el_panel_ilustrado(): void
-    {
-        $this->get(route('password.request'))
-            ->assertOk()
-            ->assertSee('class="auth-shell "', false)
-            ->assertSee('class="auth-aside"', false)
-            ->assertSee('Tu próxima jugada empieza aquí.');
-    }
-
     public function test_la_agenda_y_el_calendario_integran_las_guias_visuales(): void
     {
         $recepcionista = User::factory()->create(['rol' => User::ROL_RECEPCIONISTA]);
@@ -75,11 +66,11 @@ class VisualThemeTest extends TestCase
             ->assertSee('calendar-legend', false);
     }
 
-    public function test_la_paleta_deportiva_es_el_nuevo_valor_inicial(): void
+    public function test_la_paleta_deportiva_esta_definida_en_el_proyecto(): void
     {
-        $this->assertDatabaseHas('ajustes', ['clave' => 'color_primario', 'valor' => '#008C95']);
-        $this->assertDatabaseHas('ajustes', ['clave' => 'color_acento', 'valor' => '#B8E000']);
-        $this->assertDatabaseHas('ajustes', ['clave' => 'color_oscuro', 'valor' => '#071A2B']);
+        $this->assertSame('#008C95', config('theme.colors.color_primario'));
+        $this->assertSame('#B8E000', config('theme.colors.color_acento'));
+        $this->assertSame('#071A2B', config('theme.colors.color_oscuro'));
     }
 
     public function test_el_horario_informativo_tiene_valores_iniciales_en_la_base_de_datos(): void

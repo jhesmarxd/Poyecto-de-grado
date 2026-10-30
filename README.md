@@ -90,9 +90,15 @@ Copia `.env.example` como `.env`, configura la conexión `DB_*` y ejecuta:
 
 ```bash
 php artisan key:generate
-php artisan migrate --seed
+php artisan migrate
 npm run build
 php artisan serve
+```
+
+Si necesitas datos demostrativos, ejecútalos únicamente sobre una base vacía:
+
+```bash
+php artisan db:seed --class=DemoDatabaseSeeder
 ```
 
 La aplicación estará disponible normalmente en `http://127.0.0.1:8000`.
@@ -105,14 +111,13 @@ npm run dev
 
 ## Usuarios iniciales
 
-Se crean mediante `php artisan db:seed` o `php artisan migrate --seed`.
+Se crean mediante `DemoDatabaseSeeder` únicamente para desarrollo. El seeder se detiene si detecta usuarios, canchas o reservas existentes.
 
 | Perfil | Correo | Contraseña |
 |---|---|---|
 | Administrador | `admin@wally.com` | `Admin123!` |
 | Recepcionista | `recepcion@wally.com` | `Recep123!` |
-| Cliente de ejemplo | `juan.garcia@email.com` | `
-` |
+| Cliente de ejemplo | `juan.garcia@email.com` | `Cliente123!` |
 
 Las credenciales son únicamente para desarrollo. Deben cambiarse antes de publicar el sistema.
 
@@ -128,7 +133,7 @@ Las credenciales son únicamente para desarrollo. Deben cambiarse antes de publi
 | Historial de recepción | `/recepcionista/reservas` |
 | Administración | `/admin` |
 | Reportes | `/admin/reportes` |
-| Integración Google Calendar | `/admin/integraciones/google-calendar` |
+| Autorización técnica de Google Calendar | `/admin/integraciones/google-calendar/conectar` |
 
 ## Chatbot
 
@@ -168,7 +173,7 @@ El panel `/admin/chatbot/metricas` resume conversaciones con actividad, mensajes
 
 Las conversiones se vinculan explícitamente con la conversación cuando se crea la reserva; no se deducen del texto ni incluyen reservas hechas desde otros formularios. Este seguimiento comienza con las reservas conversacionales creadas después de incorporar esta versión. El panel utiliza conteos agregados y no duplica el contenido de los mensajes.
 
-No se muestran todavía tiempo de respuesta, errores del proveedor ni tokens consumidos porque la estructura actual no registra esos datos de manera verificable. Es preferible instrumentarlos en una fase posterior antes que presentar estimaciones.
+La observabilidad registra intentos y uso del proveedor externo, fallbacks locales, errores externos y latencia promedio. No se almacenan respuestas crudas del proveedor ni se muestran métricas de tokens porque esos datos no se registran de manera verificable.
 
 ## Temporizador de reservas
 
@@ -198,16 +203,16 @@ El inicio de sesión con Google y la sincronización empresarial de reservas usa
 {APP_URL}/admin/integraciones/google-calendar/callback
 ```
 
-Mantén `GOOGLE_CALENDAR_ENABLED=false` durante la configuración y las pruebas locales. La página de integración sólo consulta Google al pulsar **Verificar conexión y permisos**. Cuando el administrador haya conectado la cuenta y el worker de colas esté funcionando, cambia la variable a `true`, limpia la configuración y usa el botón de sincronización:
+Mantén `GOOGLE_CALENDAR_ENABLED=false` durante la configuración y las pruebas locales. No existe un módulo visual de Calendar: con una sesión de administrador, abre una vez la ruta técnica `/admin/integraciones/google-calendar/conectar` para autorizar la cuenta empresarial. Cuando la cuenta esté conectada y el worker de colas esté funcionando, cambia la variable a `true` y limpia la configuración:
 
 ```bash
 php artisan config:clear
 php artisan queue:work
 ```
 
-Las reservas pendientes no generan eventos. Al confirmarse se crea un evento estable; los cambios posteriores actualizan ese mismo evento. Las canceladas y completadas se conservan en Calendar con su estado visible. La base de datos continúa siendo la única fuente de verdad.
+Las reservas pendientes no generan eventos. Al confirmarse se crea un evento estable en el calendario empresarial y se envía una invitación al correo registrado del cliente; el cliente puede consultarlo desde **Mis reservas** y abrirlo en Google Calendar. Los cambios posteriores actualizan ese mismo evento; las canceladas y reprogramadas quedan marcadas con su estado visible. La base de datos continúa siendo la única fuente de verdad.
 
-Cada evento incluye cliente, cancha, horario, duración, estado y recordatorios configurables mediante `GOOGLE_CALENDAR_REMINDERS`. La cuenta mostrada en el panel corresponde a la identidad realmente autorizada por Google.
+Cada evento incluye cliente, cancha, horario, duración, estado y recordatorios configurables mediante `GOOGLE_CALENDAR_REMINDERS`. Google envía las actualizaciones de la invitación al cliente mediante `sendUpdates=all`.
 
 Los tokens OAuth de Calendar se guardan cifrados. Los secretos reales deben existir únicamente en `.env`; nunca en `.env.example`, vistas, JavaScript ni el repositorio.
 

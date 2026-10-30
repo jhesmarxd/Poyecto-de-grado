@@ -1,0 +1,52 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 2 - Diagrama de Actividades: Flujo Reserva y Check-in/out
+
+|Cliente|
+start
+:Selecciona fecha en calendario;
+:Ve canchas disponibles (DisponibilidadService);
+:Elige cancha + horario;
+:Elige tipo balón (propio/prestado/premium);
+:Envía formulario reserva;
+|Sistema|
+:ReservaService.crearReserva() [Transacción];
+if (¿Conflicto cancha/balón?) then (sí)
+    :Error 409 "Ya reservado";
+    stop
+else (no)
+    :Crea reserva (estado=pendiente);
+    :Dispara Job Sync Google Calendar;
+    :Notifica cliente (email/push);
+endif
+|Cliente|
+:Ve reserva en "Mis Reservas" (calendario/lista);
+:Puede cancelar si pendiente/confirmada y futura;
+
+|Recepcionista|
+start
+:Accede a /recepcionista/reservas/hoy;
+:Ve lista reservas de hoy (estado + check-in/out);
+:Cliente llega → Clic "Check-in";
+|Sistema|
+:ReservaService.registrarCheckIn() [Transacción];
+if (¿Reserva confirmada + hoy + sin check-in?) then (no)
+    :Error 422;
+else (sí)
+    :Actualiza check_in_at = now();
+    :Notifica "Reserva iniciada";
+endif
+:Cliente sale → Clic "Check-out";
+|Sistema|
+:ReservaService.registrarCheckOut() [Transacción];
+if (¿check_in existe + sin check-out?) then (no)
+    :Error 422;
+else (sí)
+    :Actualiza check_out_at = now() + estado=completada;
+    :Dispara Job Sync Google Calendar;
+    :Notifica "Reserva finalizada";
+endif
+stop
+
+@enduml

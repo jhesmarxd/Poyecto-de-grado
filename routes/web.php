@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Rutas de autenticación (Laravel Breeze/Sanctum)
-Auth::routes();
+Auth::routes(['reset' => false]);
 
 Route::middleware('guest')->get('/auth/google', [GoogleAuthController::class, 'redirect'])
     ->name('auth.google.redirect');

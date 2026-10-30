@@ -31,3 +31,7 @@ Route::get('/disponibilidad', [DisponibilidadController::class, 'index'])->name(
 Route::post('/chatbot/mensaje', [ChatbotController::class, 'mensaje'])
     ->middleware(['chatbot.auth', 'throttle:chatbot'])
     ->name('chatbot.mensaje');
+
+Route::post('/chatbot/nueva-conversacion', [ChatbotController::class, 'nuevaConversacion'])
+    ->middleware(['chatbot.auth', 'throttle:chatbot'])
+    ->name('chatbot.nueva-conversacion');

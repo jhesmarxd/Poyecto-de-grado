@@ -56,7 +56,6 @@
                             <th>Balón</th>
                             <th>Monto</th>
                             <th>Estado</th>
-                            <th>Google</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -84,24 +83,12 @@
                                 <td>
                                     <span class="badge {{ $reserva->estadoBadge() }}">{{ $reserva->estadoLabel() }}</span>
                                 </td>
-                                <td>
-                                    @php($google = $reserva->googleCalendarEvent)
-                                    @if ($google?->sync_status === \App\Models\GoogleCalendarEvent::STATUS_SYNCED)
-                                        <a href="{{ $google->google_event_url }}" target="_blank" rel="noopener" class="badge bg-success text-decoration-none">Sincronizada</a>
-                                    @elseif ($google?->sync_status === \App\Models\GoogleCalendarEvent::STATUS_ERROR)
-                                        <span class="badge bg-danger" title="{{ $google->last_error }}">Error</span>
-                                    @elseif ($google)
-                                        <span class="badge bg-warning text-dark">Pendiente</span>
-                                    @else
-                                        <span class="text-muted small">Sin enviar</span>
-                                    @endif
-                                </td>
                                 <td class="text-nowrap">
                                     @if (! in_array($reserva->estado, [\App\Models\Reserva::ESTADO_CANCELADA, \App\Models\Reserva::ESTADO_COMPLETADA], true))
                                         <form action="{{ route('admin.reservas.estado', $reserva) }}" method="POST" class="d-inline">
                                             @csrf
                                             <select name="estado" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.requestSubmit()">
-                                                @foreach (\App\Models\Reserva::ESTADOS as $clave => $etiqueta)
+                                                @foreach (\App\Models\Reserva::ESTADOS_GESTIONABLES as $clave => $etiqueta)
                                                     <option value="{{ $clave }}" @selected($reserva->estado === $clave)>{{ $etiqueta }}</option>
                                                 @endforeach
                                             </select>
@@ -116,12 +103,6 @@
                                         @csrf
                                         @method('DELETE')
                                     </form>
-                                    @if (config('services.google_calendar.enabled'))
-                                        <form action="{{ route('admin.integraciones.google-calendar.retry', $reserva) }}" method="POST" class="d-inline">
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm btn-outline-secondary ms-1">Reintentar Google</button>
-                                        </form>
-                                    @endif
                                 </td>
                             </tr>
                         @endforeach

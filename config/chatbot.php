@@ -39,4 +39,13 @@ return [
         'guest' => (int) env('CHATBOT_RATE_LIMIT_GUEST', 10),
         'authenticated' => (int) env('CHATBOT_RATE_LIMIT_AUTHENTICATED', 30),
     ],
+
+    'conversation' => [
+        'ttl_minutes' => (int) env('CHATBOT_CONVERSATION_TTL_MINUTES', 30),
+    ],
+
+    'history' => [
+        'max_user_messages' => (int) env('CHATBOT_HISTORY_USER_LIMIT', 6),
+        'max_bot_messages' => (int) env('CHATBOT_HISTORY_BOT_LIMIT', 6),
+    ],
 ];

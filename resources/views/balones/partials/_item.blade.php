@@ -1,10 +1,13 @@
 {{-- Tarjeta de un balón del mini-catálogo — requiere $balon, $version, $reservado --}}
-<div class="card balon-card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-    <div class="balon-foto" style="height: 180px; background: rgba(var(--color-primario-rgb), 0.06);">
+<div class="card balon-card h-100">
+    @if (($modo ?? 'info') === 'seleccion')
+        <span class="ball-choice__check" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
+    @endif
+    <div class="balon-foto">
         @if ($balon->imagenUrl($version ?? null))
             <img src="{{ $balon->imagenUrl($version ?? null) }}" alt="{{ $balon->marcaModelo() }}"
                  class="w-100 h-100 balon-img" data-id="{{ $balon->id }}" data-imagen="{{ $balon->imagenUrl() }}"
-                 style="object-fit: cover;">
+                 loading="lazy">
         @else
             <div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted balon-sinfoto">
                 <i class="bi bi-image display-4 mb-2"></i>
@@ -12,13 +15,13 @@
             </div>
         @endif
         @if ($reservado)
-            <span class="badge text-bg-danger position-absolute top-0 start-0 m-2">
-                <i class="bi bi-calendar-x me-1"></i>Reservado en este horario
+            <span class="badge text-bg-danger balon-unavailable">
+                <i class="bi bi-calendar-x" aria-hidden="true"></i> No disponible
             </span>
         @endif
     </div>
 
-    <div class="card-body p-3">
+    <div class="card-body">
         <div class="d-flex justify-content-between align-items-start mb-2">
             <div class="me-2">
                 @if ($balon->marca)

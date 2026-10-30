@@ -14,6 +14,8 @@ class ReservaNotification extends Notification
     public function __construct(
         private readonly Reserva $reserva,
         private readonly string $tipo,
+        private readonly ?int $cambioConfiguracionId = null,
+        private readonly ?string $mensajePersonalizado = null,
     ) {}
 
     /**
@@ -35,6 +37,7 @@ class ReservaNotification extends Notification
         return [
             'reserva_id' => $this->reserva->id,
             'tipo' => $this->tipo,
+            'cambio_configuracion_id' => $this->cambioConfiguracionId,
             'titulo' => $this->titulo(),
             'mensaje' => $this->mensaje(),
             'cancha' => $this->reserva->cancha->nombre,
@@ -53,12 +56,18 @@ class ReservaNotification extends Notification
             ReservaNotificationService::TIPO_INICIADA => 'Reserva iniciada',
             ReservaNotificationService::TIPO_FINALIZADA => 'Reserva finalizada',
             ReservaNotificationService::TIPO_CANCELADA => 'Reserva cancelada',
+            ReservaNotificationService::TIPO_AFECTADA => 'Tu reserva fue afectada',
+            ReservaNotificationService::TIPO_REPROGRAMADA => 'Reserva reprogramada',
             default => 'Actualización de reserva',
         };
     }
 
     private function mensaje(): string
     {
+        if ($this->mensajePersonalizado) {
+            return $this->mensajePersonalizado;
+        }
+
         $cancha = $this->reserva->cancha->nombre;
         $hora = $this->reserva->iniciaEn()->format('H:i');
 
@@ -69,6 +78,8 @@ class ReservaNotification extends Notification
             ReservaNotificationService::TIPO_INICIADA => "El horario de tu reserva en {$cancha} acaba de comenzar.",
             ReservaNotificationService::TIPO_FINALIZADA => "El horario de tu reserva en {$cancha} ha finalizado.",
             ReservaNotificationService::TIPO_CANCELADA => "Tu reserva #{$this->reserva->id} en {$cancha} fue cancelada.",
+            ReservaNotificationService::TIPO_AFECTADA => "Tu reserva #{$this->reserva->id} en {$cancha} fue afectada por un cambio operativo del complejo.",
+            ReservaNotificationService::TIPO_REPROGRAMADA => "Tu reserva #{$this->reserva->id} fue reprogramada.",
             default => "Hay una actualización en tu reserva #{$this->reserva->id}.",
         };
     }

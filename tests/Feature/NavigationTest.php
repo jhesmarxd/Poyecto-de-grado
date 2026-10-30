@@ -19,8 +19,11 @@ class NavigationTest extends TestCase
             ->assertOk()
             ->assertSee('Mi cuenta')
             ->assertSee('Mi panel')
-            ->assertSee('Consultar y reservar')
+            ->assertSee('Reservar cancha')
             ->assertSee('Mis reservas')
+            ->assertSee('Asistente')
+            ->assertSee('class="client-bottom-nav"', false)
+            ->assertSee('data-chatbot-open', false)
             ->assertDontSee('Administración')
             ->assertDontSee('Recepción');
 
@@ -66,9 +69,10 @@ class NavigationTest extends TestCase
             ->assertSee('Reportes operativos')
             ->assertSee('Métricas del chatbot')
             ->assertSee('Conversaciones del chatbot')
-            ->assertSee('Preferencias del sistema')
-            ->assertSee('Google Calendar')
+            ->assertDontSee('Preferencias del sistema')
+            ->assertDontSee('Google Calendar')
             ->assertSee('aria-expanded=', false)
+            ->assertDontSee('class="client-bottom-nav"', false)
             ->assertDontSee('Colores del sitio');
 
         $this->actingAs($admin)

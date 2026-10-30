@@ -1,0 +1,85 @@
+@startuml
+skinparam linetype ortho
+
+entity "users" as users {
+    * id : bigint <<PK>>
+    --
+    * name : varchar(255)
+    * email : varchar(255) <<UK>>
+    * rol : enum('admin','recepcionista','cliente')
+}
+
+entity "canchas" as canchas {
+    * id : bigint <<PK>>
+    --
+    * nombre : varchar(100)
+    * precio_por_hora : decimal(8,2)
+}
+
+entity "horarios" as horarios {
+    * id : bigint <<PK>>
+    --
+    * cancha_id : bigint <<FK>>
+    * dia_semana : tinyint
+    * hora_inicio : time
+    * hora_fin : time
+}
+
+entity "balones" as balones {
+    * id : bigint <<PK>>
+    --
+    * nombre : varchar(100)
+    * precio_alquiler : decimal(8,2)
+}
+
+entity "reservas" as reservas {
+    * id : bigint <<PK>>
+    --
+    * user_id : bigint <<FK>>
+    * cancha_id : bigint <<FK>>
+    * horario_id : bigint <<FK>>
+    balon_id : bigint <<FK>>
+    * fecha : date
+    * hora_inicio_reserva : time
+    * hora_fin_reserva : time
+    * monto_total : decimal(8,2)
+    * estado : enum('pendiente','confirmada','en_curso','completada','cancelada')
+    * origen : enum('web','recepcion','chatbot')
+    checkin_at : timestamp
+    checkout_at : timestamp
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "conversaciones" as conversaciones {
+    * id : bigint <<PK>>
+    --
+    user_id : bigint <<FK>>
+    * session_id : varchar(100)
+    ip_origen : varchar(45)
+    canal : varchar(50)
+    estado : varchar(50)
+    contexto : json
+    created_at : timestamp
+    updated_at : timestamp
+}
+
+entity "mensajes_chatbot" as mensajes {
+    * id : bigint <<PK>>
+    --
+    * conversacion_id : bigint <<FK>>
+    * emisor : enum('user','bot')
+    * mensaje : text
+    intencion_detectada : varchar(100)
+    confianza : decimal(5,4)
+    tiempo_respuesta_ms : int
+    created_at : timestamp
+}
+
+users ||--o{ reservas : "1:N (solicita)"
+canchas ||--o{ reservas : "1:N (es reservada)"
+horarios ||--o{ reservas : "1:N (turno asignado)"
+balones ||--o{ reservas : "0..1:N (alquiler opcional)"
+users ||--o{ conversaciones : "0..1:N (inicia)"
+conversaciones ||--o{ mensajes : "1:N (contiene)"
+@enduml

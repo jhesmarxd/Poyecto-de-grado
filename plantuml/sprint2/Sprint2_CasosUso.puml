@@ -1,0 +1,37 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Administrador" as Admin
+actor "Recepcionista" as Recep
+actor "Cliente" as Cliente
+
+rectangle "Módulo de Canchas y Horarios (Sprint 2)" {
+    usecase "CU-03: Administrar Canchas" as CU03
+    usecase "CU-03.1: Registrar Nueva Cancha" as CU03_Crear
+    usecase "CU-03.2: Modificar Cancha y Cargar Imagen" as CU03_Editar
+    usecase "CU-03.3: Gestionar Balones Deportivos" as CU03_Balones
+    usecase "CU-03.4: Consultar Catálogo de Canchas" as CU03_Catalogo
+    usecase "CU-04: Gestionar Horarios y Disponibilidad" as CU04
+    usecase "CU-04.1: Parametrizar Franjas por Cancha" as CU04_Crear
+    usecase "CU-04.2: Generar Franjas Semanales Masivas" as CU04_Bulk
+    usecase "CU-04.3: Registrar Cierres por Mantenimiento" as CU04_Cierres
+    usecase "CU-04.4: Consultar Disponibilidad de Canchas" as CU04_Disp
+}
+
+Admin --> CU03
+Admin --> CU04
+CU03 ..> CU03_Crear : <<include>>
+CU03 ..> CU03_Editar : <<include>>
+CU03 ..> CU03_Balones : <<include>>
+CU04 ..> CU04_Crear : <<include>>
+CU04 ..> CU04_Bulk : <<include>>
+CU04 ..> CU04_Cierres : <<include>>
+
+Recep --> CU03_Catalogo
+Recep --> CU04_Disp
+
+Cliente --> CU03_Catalogo
+Cliente --> CU04_Disp
+@enduml

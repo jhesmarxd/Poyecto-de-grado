@@ -1,0 +1,35 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Administrador" as Admin
+actor "Recepcionista" as Recep
+actor "Cliente" as Cliente
+
+rectangle "HU-05: Administrar Reservas" {
+    usecase "CU-05: Administrar Reservas" as CU05
+    usecase "CU-05.1: Crear Reserva Online (Cliente)" as CU05_Cliente
+    usecase "CU-05.2: Registrar Reserva Presencial (Recepción)" as CU05_Recep
+    usecase "CU-05.3: Registrar Check-in Presencial" as CU05_Checkin
+    usecase "CU-05.4: Registrar Check-out y Liquidación" as CU05_Checkout
+    usecase "CU-05.5: Sincronizar con Google Calendar" as CU05_GCal
+    usecase "CU-05.6: Configurar Parámetros y Políticas de Reserva" as CU05_Config
+    usecase "Calcular Importe Total (Cancha + Balón)" as CU_Calcular
+}
+
+Admin --> CU05
+Admin --> CU05_Config
+
+Recep --> CU05_Recep
+Recep --> CU05_Checkin
+Recep --> CU05_Checkout
+
+Cliente --> CU05_Cliente
+
+CU05_Cliente ..> CU_Calcular : <<include>>
+CU05_Recep ..> CU_Calcular : <<include>>
+CU05_Cliente ..> CU05_GCal : <<extend>>
+CU05_Recep ..> CU05_GCal : <<extend>>
+@enduml
+

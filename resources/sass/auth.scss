@@ -70,6 +70,16 @@
   > input.is-invalid + label { color: var(--danger); }
 }
 
+// Separación exclusiva entre los campos del formulario de inicio de sesión.
+.auth-login-form .auth-field + .auth-field {
+  margin-top: 1.25rem;
+}
+
+// Mantiene una separación cómoda entre los campos del formulario de registro.
+.auth-register-form .auth-field + .auth-field {
+  margin-top: 1.25rem;
+}
+
 .auth-password > input { padding-right: 3rem; }
 
 .password-toggle {

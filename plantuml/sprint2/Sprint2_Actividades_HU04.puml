@@ -1,0 +1,34 @@
+@startuml
+start
+:Administrador accede a /admin/horarios;
+:Selecciona la cancha a parametrizar en el menú selector;
+:Sistema recupera horarios semanales y cierres programados;
+if (¿Qué modalidad de configuración desea aplicar?) then (Franja Individual)
+    :Selecciona "+ Agregar Horario";
+    :Define día de la semana (1-7), hora inicio y hora fin;
+    :Presiona "Guardar Horario";
+    :Valida regla de solapamiento en BD;
+    if (¿Existe superposición horaria?) then (Sí)
+        :Muestra error "La franja horaria se superpone";
+        stop
+    else (No)
+        :Inserta franja en tabla horarios;
+    endif
+elseif (Generación Masiva por Periodo) then
+    :Selecciona "Configuración Semanal Masiva";
+    :Marca días laborales (ej. Lun a Sáb);
+    :Define periodo vigente_desde y vigente_hasta;
+    :Establece rango horario general (ej. 09:00 a 22:00);
+    :Selecciona duración de bloques (30, 60, 90 o 120 min);
+    :Presiona "Generar Bloques";
+    :Sistema descompone y genera 78 bloques contiguos;
+    :Persiste franjas masivas sin solapamiento;
+else (Registrar Cierre Excepcional)
+    :Selecciona "+ Bloqueo / Cierre Temporal";
+    :Ingresa fecha del cierre y motivo (Mantenimiento, Feriado);
+    :Persiste en tabla cierre_canchas;
+    :DisponibilidadService oculta automáticamente las franjas para esa fecha;
+endif
+:Muestra grilla horaria actualizada;
+stop
+@enduml

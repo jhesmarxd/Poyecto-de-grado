@@ -1,0 +1,42 @@
+@startuml
+autonumber
+actor "Usuario / Cliente" as User
+boundary "Widget Chatbot\n(resources/js/chatbot.js)" as Widget
+control "ChatbotController" as Controller
+control "ChatbotService" as BotService
+control "PoliticaSeguridadChatbot" as Security
+control "DetectorIntencion" as Intent
+control "ExtractorEntidades" as Entities
+control "ReservaService" as ResService
+database "Base de Datos\n(conversaciones, mensajes)" as DB
+
+User -> Widget : Escribe: "¿Hay cancha disponible mañana a las 7 pm?"
+Widget -> Controller : POST /chatbot/mensaje {mensaje: "...", session_id: "xyz"}
+activate Controller
+
+Controller -> BotService : responder(mensaje, conversacion, user)
+activate BotService
+
+BotService -> Security : evaluar(mensaje)
+Security --> BotService : null (Sin patrones maliciosos)
+
+BotService -> Intent : detectar(mensaje)
+Intent --> BotService : "consultar_disponibilidad"
+
+BotService -> Entities : fecha("mañana"), hora("7 pm")
+Entities --> BotService : {fecha: "2026-10-22", hora: "19:00"}
+
+BotService -> ResService : periodoOcupado(canchaId, "2026-10-22", "19:00", "20:00")
+ResService --> BotService : false (Disponible)
+
+BotService -> DB : Guarda MensajeChatbot (emisor='bot', intencion='consultar_disponibilidad', ms=120)
+DB --> BotService : Confirmación
+
+BotService --> Controller : {respuesta: "¡Sí! La Cancha 1 está libre mañana a las 7:00 PM...", intencion: "consultar_disponibilidad"}
+deactivate BotService
+
+Controller --> Widget : JSON 200 {respuesta, intencion}
+deactivate Controller
+
+Widget --> User : Renderiza burbuja de respuesta con botón de acción directa a reservar
+@enduml

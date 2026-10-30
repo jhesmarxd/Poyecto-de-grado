@@ -33,11 +33,6 @@
                 <button type="submit" class="auth-btn">Confirmar contraseña</button>
             </div>
 
-            @if (Route::has('password.request'))
-                <div class="auth-switch">
-                    <a class="auth-link" href="{{ route('password.request') }}">¿Olvidaste tu contraseña?</a>
-                </div>
-            @endif
         </form>
     </div>
 @endsection

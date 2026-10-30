@@ -107,17 +107,17 @@ class GoogleCalendarService implements GoogleCalendarGateway
         $baseUrl = self::API_URL.'/calendars/'.$calendarId.'/events';
 
         $response = $link->synced_at
-            ? Http::withToken($accessToken)->acceptJson()->put($baseUrl.'/'.rawurlencode($eventId), $payload)
-            : Http::withToken($accessToken)->acceptJson()->post($baseUrl, $payload);
+            ? Http::withToken($accessToken)->acceptJson()->put($baseUrl.'/'.rawurlencode($eventId).'?sendUpdates=all', $payload)
+            : Http::withToken($accessToken)->acceptJson()->post($baseUrl.'?sendUpdates=all', $payload);
 
         if ($response->status() === 404 && $link->synced_at) {
-            $response = Http::withToken($accessToken)->acceptJson()->post($baseUrl, $payload);
+            $response = Http::withToken($accessToken)->acceptJson()->post($baseUrl.'?sendUpdates=all', $payload);
         }
 
         if ($response->status() === 409) {
             $response = Http::withToken($accessToken)
                 ->acceptJson()
-                ->put($baseUrl.'/'.rawurlencode($eventId), $payload);
+                ->put($baseUrl.'/'.rawurlencode($eventId).'?sendUpdates=all', $payload);
         }
 
         $this->throwForGoogleError($response, 'No se pudo guardar el evento en Google Calendar.');
@@ -154,7 +154,7 @@ class GoogleCalendarService implements GoogleCalendarGateway
         $calendarId = rawurlencode($calendarId ?: $connection->calendar_id ?: 'primary');
         $response = Http::withToken($this->accessToken($connection))
             ->acceptJson()
-            ->delete(self::API_URL.'/calendars/'.$calendarId.'/events/'.rawurlencode($eventId));
+            ->delete(self::API_URL.'/calendars/'.$calendarId.'/events/'.rawurlencode($eventId).'?sendUpdates=all');
 
         if (! in_array($response->status(), [404, 410], true)) {
             $this->throwForGoogleError($response, 'No se pudo eliminar el evento de Google Calendar.');
@@ -216,7 +216,9 @@ class GoogleCalendarService implements GoogleCalendarGateway
         ]);
 
         $prefix = match ($reserva->estado) {
-            Reserva::ESTADO_CANCELADA => '[CANCELADA] ',
+            Reserva::ESTADO_CANCELADA, Reserva::ESTADO_CANCELADA_COMPLEJO => '[CANCELADA] ',
+            Reserva::ESTADO_REPROGRAMADA => '[REPROGRAMADA] ',
+            Reserva::ESTADO_AFECTADA => '[AFECTADA] ',
             Reserva::ESTADO_COMPLETADA => '[COMPLETADA] ',
             default => '',
         };
@@ -233,6 +235,9 @@ class GoogleCalendarService implements GoogleCalendarGateway
                 'useDefault' => false,
                 'overrides' => $this->reminders(),
             ],
+            'attendees' => [
+                ['email' => $reserva->usuario->email],
+            ],
             'extendedProperties' => [
                 'private' => [
                     'wally_reserva_id' => (string) $reserva->id,
@@ -241,7 +246,7 @@ class GoogleCalendarService implements GoogleCalendarGateway
             ],
         ];
 
-        if ($reserva->estado === Reserva::ESTADO_CANCELADA) {
+        if ($reserva->estaCancelada()) {
             $event['colorId'] = '11';
         }
 

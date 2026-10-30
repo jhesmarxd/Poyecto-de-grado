@@ -1,0 +1,44 @@
+@startuml
+start
+:Cliente o Recepcionista inicia proceso de reserva;
+if (¿Canal de registro?) then (Presencial / Telefónico en Recepción)
+    :Recepcionista ingresa a /recepcionista/reservas/crear;
+    :Busca cliente por teléfono o registra nuevo;
+    :Selecciona cancha y bloque horario del día;
+    :Asigna balón si el cliente lo solicita;
+    :Confirma cobro y marca origen='recepcion';
+else (Online por Cliente Autenticado)
+    :Cliente selecciona cancha en el calendario interactivo;
+    :Elige fecha y franja disponible;
+    :Opcionalmente selecciona un balón disponible;
+    :Presiona "Confirmar Reserva";
+endif
+
+:Sistema verifica política de anticipación y límites de reservas activas;
+if (¿Cumple políticas de reserva?) then (No)
+    :Muestra advertencia de política (ej. fuera de rango);
+    stop
+else (Sí)
+    :Inicia transacción de base de datos con bloqueo FOR UPDATE;
+    :Verifica que la franja horaria siga libre;
+    if (¿Franja horaria libre?) then (No)
+        :Revierte transacción (Rollback);
+        :Informa que el horario acaba de ser ocupado;
+        stop
+    else (Sí)
+        :Inserta registro en tabla reservas con estado='confirmada';
+        :Despacha trabajo asíncrono para Google Calendar;
+        :Genera comprobante de reserva con fecha y hora;
+        :Compromete transacción (Commit);
+    endif
+endif
+
+if (¿El cliente se presenta en el complejo?) then (Sí)
+    :Recepcionista ejecuta Check-in en agenda del día;
+    :Sistema registra checkin_at y cambia estado a 'en_curso';
+    :Al finalizar el turno, registra checkout_at y estado='completada';
+else (No asiste tras vencer tiempo de tolerancia)
+    :Sistema o recepcionista marca estado='cancelada' o 'no_asistio';
+endif
+stop
+@enduml

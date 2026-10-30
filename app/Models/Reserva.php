@@ -44,6 +44,12 @@ class Reserva extends Model
 
     public const ESTADO_COMPLETADA = 'completada';
 
+    public const ESTADO_AFECTADA = 'afectada_por_configuracion';
+
+    public const ESTADO_CANCELADA_COMPLEJO = 'cancelada_por_complejo';
+
+    public const ESTADO_REPROGRAMADA = 'reprogramada';
+
     /**
      * Tipos de balón que puede elegir el cliente en una reserva.
      */
@@ -76,6 +82,16 @@ class Reserva extends Model
         self::ESTADO_CONFIRMADA => 'Confirmada',
         self::ESTADO_CANCELADA => 'Cancelada',
         self::ESTADO_COMPLETADA => 'Completada',
+        self::ESTADO_AFECTADA => 'Afectada por configuración',
+        self::ESTADO_CANCELADA_COMPLEJO => 'Cancelada por el complejo',
+        self::ESTADO_REPROGRAMADA => 'Reprogramada',
+    ];
+
+    public const ESTADOS_GESTIONABLES = [
+        self::ESTADO_PENDIENTE => 'Pendiente',
+        self::ESTADO_CONFIRMADA => 'Confirmada',
+        self::ESTADO_CANCELADA => 'Cancelada',
+        self::ESTADO_COMPLETADA => 'Completada',
     ];
 
     /**
@@ -86,6 +102,9 @@ class Reserva extends Model
         self::ESTADO_CONFIRMADA => 'bg-success',
         self::ESTADO_CANCELADA => 'bg-danger',
         self::ESTADO_COMPLETADA => 'bg-secondary',
+        self::ESTADO_AFECTADA => 'bg-warning text-dark',
+        self::ESTADO_CANCELADA_COMPLEJO => 'bg-danger',
+        self::ESTADO_REPROGRAMADA => 'bg-info text-dark',
     ];
 
     /**
@@ -96,6 +115,9 @@ class Reserva extends Model
         self::ESTADO_CONFIRMADA => '#198754',
         self::ESTADO_CANCELADA => '#dc3545',
         self::ESTADO_COMPLETADA => '#6c757d',
+        self::ESTADO_AFECTADA => '#fd7e14',
+        self::ESTADO_CANCELADA_COMPLEJO => '#dc3545',
+        self::ESTADO_REPROGRAMADA => '#0dcaf0',
     ];
 
     /**
@@ -105,6 +127,7 @@ class Reserva extends Model
      */
     protected $fillable = [
         'user_id',
+        'reprogramada_desde_id',
         'cancha_id',
         'horario_id',
         'fecha',
@@ -230,12 +253,26 @@ class Reserva extends Model
         return $this->hasOne(GoogleCalendarEvent::class);
     }
 
+    public function afectacionConfiguracion(): HasOne
+    {
+        return $this->hasOne(ReservaAfectadaConfiguracion::class)->latestOfMany();
+    }
+
+    public function reservaOriginal(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'reprogramada_desde_id');
+    }
+
     /**
      * Reservas que aún están vigentes (no canceladas).
      */
     public function scopeActivas(Builder $query): Builder
     {
-        return $query->where('estado', '!=', self::ESTADO_CANCELADA);
+        return $query->whereNotIn('estado', [
+            self::ESTADO_CANCELADA,
+            self::ESTADO_CANCELADA_COMPLEJO,
+            self::ESTADO_REPROGRAMADA,
+        ]);
     }
 
     /**
@@ -259,7 +296,11 @@ class Reserva extends Model
      */
     public function estaCancelada(): bool
     {
-        return $this->estado === self::ESTADO_CANCELADA;
+        return in_array($this->estado, [
+            self::ESTADO_CANCELADA,
+            self::ESTADO_CANCELADA_COMPLEJO,
+            self::ESTADO_REPROGRAMADA,
+        ], true);
     }
 
     /**

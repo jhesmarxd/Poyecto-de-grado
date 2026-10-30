@@ -1,0 +1,40 @@
+@startuml
+autonumber
+actor "Usuario" as User
+boundary "Vista Login\n(auth/login.blade.php)" as View
+control "LoginController" as Controller
+entity "Modelo User" as Model
+database "Base de Datos\n(users)" as DB
+
+User -> View : Ingresa correo y contraseña
+User -> View : Clic en "Iniciar Sesión"
+View -> Controller : POST /login (email, password)
+activate Controller
+
+Controller -> Controller : credentials(request) agrega [estado => true]
+Controller -> Model : where('email', email)->first()
+activate Model
+Model -> DB : SELECT * FROM users WHERE email = ?
+DB --> Model : Retorna registro de usuario
+Model --> Controller : Instancia User
+
+alt Credenciales correctas y estado = 1
+    Controller -> Controller : Autentica sesión y regenera Token
+    Controller -> Controller : redirectTo() evalúa rol
+    alt Rol = Administrador
+        Controller --> View : Redirige a /admin (admin.dashboard)
+    else Rol = Recepcionista
+        Controller --> View : Redirige a /recepcionista/reservas/hoy
+    else Rol = Cliente
+        Controller --> View : Redirige a /home
+    end
+    View --> User : Despliega panel según rol autorizado
+else Usuario inactivo (estado = 0)
+    Controller --> View : ValidationException('auth.inactive')
+    View --> User : Muestra mensaje: "Tu cuenta se encuentra inactiva..."
+else Credenciales inválidas
+    Controller --> View : ValidationException('auth.failed')
+    View --> User : Muestra mensaje: "Estas credenciales no coinciden..."
+end
+deactivate Controller
+@enduml

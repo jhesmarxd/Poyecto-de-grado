@@ -4,13 +4,13 @@
             $reservasActivo = str_starts_with($route, 'admin.reservas.');
             $recursosActivo = str_starts_with($route, 'admin.canchas.') || str_starts_with($route, 'admin.horarios.') || str_starts_with($route, 'admin.balones.');
             $analisisActivo = str_starts_with($route, 'admin.reportes.') || str_starts_with($route, 'admin.chatbot.');
-            $configuracionActiva = str_starts_with($route, 'admin.ajustes.') || str_starts_with($route, 'admin.integraciones.');
+            $configuracionActiva = str_starts_with($route, 'admin.configuracion-reservas.');
         @endphp
         <nav class="nav-section" aria-label="Administración">
             <div class="nav-label">Administración</div>
             <a class="nav-link {{ $route === 'admin.dashboard' ? 'is-active' : '' }}" href="{{ route('admin.dashboard') }}">
                 <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
-                <span>Panel operativo</span>
+                <span>Dashboard</span>
             </a>
 
             <div class="nav-item-group {{ $reservasActivo ? 'is-open' : '' }}" data-nav-group>
@@ -67,8 +67,7 @@
                     <svg class="chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
                 </button>
                 <div class="nav-submenu" id="nav-configuracion">
-                    <a class="{{ str_starts_with($route, 'admin.ajustes.') ? 'is-active' : '' }}" href="{{ route('admin.ajustes.index') }}">Preferencias del sistema</a>
-                    <a class="{{ str_starts_with($route, 'admin.integraciones.') ? 'is-active' : '' }}" href="{{ route('admin.integraciones.google-calendar.index') }}">Google Calendar</a>
+                    <a class="{{ str_starts_with($route, 'admin.configuracion-reservas.') ? 'is-active' : '' }}" href="{{ route('admin.configuracion-reservas.index') }}">Reglas de reservas y chatbot</a>
                 </div>
             </div>
         </nav>
@@ -93,21 +92,7 @@
             </a>
         </nav>
     @else
-        <nav class="nav-section" aria-label="Mi cuenta">
-            <div class="nav-label">Mi cuenta</div>
-            <a class="nav-link {{ $route === 'home' ? 'is-active' : '' }}" href="{{ route('home') }}">
-                <svg viewBox="0 0 24 24"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg>
-                <span>Mi panel</span>
-            </a>
-            <a class="nav-link {{ in_array($route, ['disponibilidad.index', 'canchas.index', 'canchas.show', 'reservas.crear']) ? 'is-active' : '' }}" href="{{ route('disponibilidad.index') }}">
-                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                <span>Consultar y reservar</span>
-            </a>
-            <a class="nav-link {{ in_array($route, ['reservas.mis', 'reservas.mis.eventos']) ? 'is-active' : '' }}" href="{{ route('reservas.mis') }}">
-                <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
-                <span>Mis reservas</span>
-            </a>
-        </nav>
+        @include('layouts._client_navigation', ['route' => $route])
     @endif
 @else
     <nav class="nav-section" aria-label="Principal">

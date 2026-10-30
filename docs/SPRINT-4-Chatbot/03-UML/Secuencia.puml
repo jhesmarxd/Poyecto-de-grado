@@ -1,0 +1,82 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 4 - Diagrama de Secuencia: Flujo Conversacional Reserva por Chat
+
+actor "Cliente" as Cliente
+participant "ChatbotController" as Ctrl
+participant "ChatbotService" as Svc
+participant "DetectorIntencion" as NLP1
+participant "ExtractorEntidades" as NLP2
+participant "PoliticaSeguridadChatbot" as Sec
+participant "ReservaConversacionalService" as ResConv
+participant "ReservaService" as ResSvc
+participant "ConversationLifecycleService" as Life
+participant "ChatbotTraceService" as Trace
+database "DB" as DB
+
+Cliente -> Ctrl: POST /chatbot/webhook (mensaje, session_id)
+activate Ctrl
+Ctrl -> Svc: procesar(user, mensaje, session_id)
+activate Svc
+
+Svc -> Sec: validar(mensaje)
+Sec --> Svc: Bool + sanitizado
+
+alt No válido (rate limit, inyección, etc.)
+    Svc --> Ctrl: Respuesta error seguro
+    Ctrl --> Cliente: "Lo siento, intenta más tarde"
+else Válido
+    Svc -> Life: continuar(conversacion, mensaje)
+    Life --> Svc: Conversacion actualizada
+    
+    Svc -> NLP1: detectar(mensaje)
+    activate NLP1
+    NLP1 -> NLP1: Clasificar intención + confidence
+    NLP1 --> Svc: AnalisisNlp {intencion, confianza, proveedor}
+    deactivate NLP1
+    
+    Svc -> Trace: registrar(traceId, {intencion, confianza})
+    
+    alt Confianza < UMBRAL (ej. 0.7)
+        Svc -> Svc: Preguntar clarificación
+        Svc --> Ctrl: "¿Quieres decir...?"
+    else Confianza >= UMBRAL
+        Svc -> NLP2: extraer(mensaje, intencion)
+        activate NLP2
+        NLP2 --> Svc: Entidades {fecha, cancha, hora, balon, duracion}
+        deactivate NLP2
+        
+        alt Intención = "crear_reserva"
+            Svc -> ResConv: crearReservaDesdeChat(conversacion, entidades)
+            activate ResConv
+            ResConv -> ResSvc: crearReserva(user, datosExtraidos)
+            activate ResSvc
+            ResSvc -> DB: Transacción (lockForUpdate, validaciones, INSERT)
+            DB --> ResSvc: Reserva creada
+            ResSvc --> ResConv: Reserva
+            ResConv --> Svc: Respuesta confirmación + detalles
+            deactivate ResSvc
+            deactivate ResConv
+            
+            Svc -> Life: finalizar(conversacion)
+        else Intención = "consultar_disponibilidad"
+            Svc -> ResConv: consultarDisponibilidad(entidades)
+            ResConv --> Svc: Array horarios libres
+            Svc --> Ctrl: Respuesta con opciones
+        else Intención = "cancelar_reserva"
+            Svc -> ResConv: cancelarReservaChat(conversacion, entidades)
+            ResConv --> Svc: Bool
+            Svc --> Ctrl: Respuesta confirmación
+        else Intención = "faq" / "saludo" / "despedida"
+            Svc -> Svc: Respuesta template
+        end
+    end
+end
+
+Svc --> Ctrl: Respuesta final {texto, botones, quick_replies}
+Ctrl --> Cliente: JSON Response
+deactivate Svc
+deactivate Ctrl
+
+@enduml

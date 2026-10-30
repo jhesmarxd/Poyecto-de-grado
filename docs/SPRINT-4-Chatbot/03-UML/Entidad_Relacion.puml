@@ -1,0 +1,104 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 4 - Diagrama Entidad-Relación: Chatbot, Conversaciones, Métricas
+
+entity "conversaciones" as Conversaciones {
+    * id : BIGINT <<PK>>
+    --
+    * user_id : BIGINT <<FK,NULLABLE>>
+    * session_id : VARCHAR(100) <<UK>>
+    * estado : ENUM('activa','finalizada','transferida','abandonada')
+    * canal : ENUM('web','whatsapp','telegram','api')
+    * metadata : JSON
+    * lifecycle_state : ENUM('iniciada','en_curso','esperando_clarificacion','finalizada','humano')
+    * iniciada_en : TIMESTAMP
+    * finalizada_en : TIMESTAMP <<NULLABLE>>
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+}
+
+entity "mensajes_chatbot" as Mensajes {
+    * id : BIGINT <<PK>>
+    --
+    * conversacion_id : BIGINT <<FK>>
+    * rol : ENUM('user','assistant','system','human')
+    * contenido : TEXT
+    * entidades : JSON <<NULLABLE>>
+    * intent : VARCHAR(100) <<NULLABLE>>
+    * confidence : DECIMAL(3,2) <<NULLABLE>>
+    * metadata : JSON <<NULLABLE>>
+    * created_at : TIMESTAMP
+}
+
+entity "chatbot_ejecuciones" as Ejecuciones {
+    * id : BIGINT <<PK>>
+    --
+    * conversacion_id : BIGINT <<FK>>
+    * accion : VARCHAR(100)
+    * parametros : JSON
+    * resultado : JSON <<NULLABLE>>
+    * duracion_ms : INT
+    * exitosa : BOOLEAN
+    * error : TEXT <<NULLABLE>>
+    * created_at : TIMESTAMP
+}
+
+Conversaciones ||--o{ Mensajes : "1:N"
+Conversaciones ||--o{ Ejecuciones : "1:N"
+Users ||--o{ Conversaciones : "1:N (user_id nullable para anónimos)"
+
+note right of Conversaciones
+    Índices:
+    - PRIMARY KEY (id)
+    - UNIQUE (session_id)
+    - FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    - INDEX (estado, iniciada_en)
+    - INDEX (user_id, estado)
+    - INDEX (canal)
+    - INDEX (lifecycle_state)
+    
+    lifecycle_state flow:
+    iniciada → en_curso → [esperando_clarificacion] → finalizada
+                              ↓
+                         transferida → humano
+end note
+
+note right of Mensajes
+    Índices:
+    - PRIMARY KEY (id)
+    - FOREIGN KEY (conversacion_id) REFERENCES conversaciones(id) ON DELETE CASCADE
+    - INDEX (conversacion_id, created_at)
+    - INDEX (rol)
+    - INDEX (intent)
+    
+    JSON entidades ejemplo:
+    {
+        "fecha": "2026-10-15",
+        "cancha": "Cancha 1",
+        "hora_inicio": "18:00",
+        "hora_fin": "19:30",
+        "balon": "premium",
+        "duracion_minutos": 90
+    }
+end note
+
+note right of Ejecuciones
+    Índices:
+    - PRIMARY KEY (id)
+    - FOREIGN KEY (conversacion_id) REFERENCES conversaciones(id) ON DELETE CASCADE
+    - INDEX (conversacion_id, created_at)
+    - INDEX (accion)
+    - INDEX (exitosa)
+    
+    Acciones típicas:
+    - detectar_intencion
+    - extraer_entidades
+    - crear_reserva
+    - consultar_disponibilidad
+    - cancelar_reserva
+    - transferir_humano
+    - respuesta_faq
+end note
+
+@enduml

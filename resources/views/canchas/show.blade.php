@@ -43,9 +43,6 @@
                             <strong>Precio base:</strong> Bs. {{ number_format($cancha->precio_por_hora, 2) }} / hora
                         </li>
                         <li class="mb-2">
-                            <strong>Capacidad:</strong> {{ $cancha->capacidad }} personas
-                        </li>
-                        <li class="mb-2">
                             <strong>Tipo de recinto:</strong> Cerrada (techada, no campo abierto)
                         </li>
                         <li class="mb-2">

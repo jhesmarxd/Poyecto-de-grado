@@ -14,6 +14,7 @@ use App\Services\ReservaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\GoogleProvider;
 use Laravel\Socialite\Two\User as GoogleUser;
@@ -126,17 +127,11 @@ class GoogleIntegrationTest extends TestCase
         $this->assertDatabaseCount('social_accounts', 0);
     }
 
-    public function test_calendar_admin_page_never_calls_google_on_load(): void
+    public function test_calendar_does_not_have_a_visual_admin_module(): void
     {
         Http::preventStrayRequests();
-        $admin = User::factory()->create(['rol' => User::ROL_ADMIN]);
-
-        $this->actingAs($admin)
-            ->get(route('admin.integraciones.google-calendar.index'))
-            ->assertOk()
-            ->assertSee('Google Calendar')
-            ->assertSee('GOOGLE_CALENDAR_ENABLED=false', false);
-
+        $this->assertFalse(Route::has('admin.integraciones.google-calendar.index'));
+        $this->assertTrue(Route::has('admin.integraciones.google-calendar.connect'));
         Http::assertNothingSent();
     }
 
@@ -160,7 +155,7 @@ class GoogleIntegrationTest extends TestCase
                 'state' => 'valid-state',
                 'code' => 'fake-code',
             ]))
-            ->assertRedirect(route('admin.integraciones.google-calendar.index'));
+            ->assertRedirect(route('admin.dashboard'));
 
         $connection = GoogleCalendarConnection::query()->firstOrFail();
         $this->assertSame('fake-access-token', $connection->access_token);
@@ -235,6 +230,7 @@ class GoogleIntegrationTest extends TestCase
                 && str_contains($data['description'], 'Horario:')
                 && str_contains($data['description'], 'Duración:')
                 && str_contains($data['description'], 'Estado: Confirmada')
+                && $data['attendees'] === [['email' => $reserva->usuario->email]]
                 && $data['start']['timeZone'] === 'America/La_Paz'
                 && $data['end']['timeZone'] === 'America/La_Paz'
                 && $data['reminders'] === [
@@ -244,7 +240,8 @@ class GoogleIntegrationTest extends TestCase
                         ['method' => 'popup', 'minutes' => 120],
                         ['method' => 'popup', 'minutes' => 30],
                     ],
-                ];
+                ]
+                && str_contains($request->url(), 'sendUpdates=all');
         });
 
         $connection->update(['calendar_id' => 'calendario-nuevo@example.com']);
@@ -283,62 +280,6 @@ class GoogleIntegrationTest extends TestCase
         $this->assertStringContainsString('email', urldecode($url));
         $this->assertStringContainsString('calendar.events', urldecode($url));
         Http::assertNothingSent();
-    }
-
-    public function test_no_permite_cambiar_el_calendar_id_con_eventos_externos_activos(): void
-    {
-        $admin = User::factory()->create(['rol' => User::ROL_ADMIN]);
-        $connection = GoogleCalendarConnection::create([
-            'connected_by' => $admin->id,
-            'calendar_id' => 'primary',
-            'access_token' => 'fake-access-token',
-            'refresh_token' => 'fake-refresh-token',
-            'enabled' => true,
-        ]);
-        GoogleCalendarEvent::create([
-            'reserva_id' => Reserva::factory()->confirmada()->create()->id,
-            'calendar_id' => 'primary',
-            'google_event_id' => 'evento-activo',
-            'sync_status' => GoogleCalendarEvent::STATUS_SYNCED,
-        ]);
-
-        $this->actingAs($admin)
-            ->put(route('admin.integraciones.google-calendar.update'), [
-                'calendar_id' => 'otro-calendario@example.com',
-                'enabled' => true,
-            ])
-            ->assertRedirect()
-            ->assertSessionHasErrors('google_calendar');
-
-        $this->assertSame('primary', $connection->fresh()->calendar_id);
-    }
-
-    public function test_cambiar_calendar_id_actualiza_los_vinculos_aun_no_sincronizados(): void
-    {
-        $admin = User::factory()->create(['rol' => User::ROL_ADMIN]);
-        $connection = GoogleCalendarConnection::create([
-            'connected_by' => $admin->id,
-            'calendar_id' => 'primary',
-            'access_token' => 'fake-access-token',
-            'refresh_token' => 'fake-refresh-token',
-            'enabled' => true,
-        ]);
-        $link = GoogleCalendarEvent::create([
-            'reserva_id' => Reserva::factory()->confirmada()->create()->id,
-            'calendar_id' => 'primary',
-            'sync_status' => GoogleCalendarEvent::STATUS_PENDING,
-        ]);
-
-        $this->actingAs($admin)
-            ->put(route('admin.integraciones.google-calendar.update'), [
-                'calendar_id' => 'nuevo-calendario@example.com',
-                'enabled' => true,
-            ])
-            ->assertRedirect()
-            ->assertSessionHasNoErrors();
-
-        $this->assertSame('nuevo-calendario@example.com', $connection->fresh()->calendar_id);
-        $this->assertSame('nuevo-calendario@example.com', $link->fresh()->calendar_id);
     }
 
     public function test_una_reserva_pendiente_no_genera_evento_ni_llamada(): void
@@ -466,30 +407,6 @@ class GoogleIntegrationTest extends TestCase
             'sync_status' => GoogleCalendarEvent::STATUS_PENDING,
         ]);
         Queue::assertPushed(SyncReservationToGoogleCalendar::class, 1);
-    }
-
-    public function test_el_panel_puede_verificar_el_calendario_sin_exponer_tokens(): void
-    {
-        config()->set('services.google_calendar.enabled', true);
-        $admin = User::factory()->create(['rol' => User::ROL_ADMIN]);
-        GoogleCalendarConnection::create([
-            'connected_by' => $admin->id,
-            'calendar_id' => 'primary',
-            'access_token' => 'fake-access-token',
-            'refresh_token' => 'fake-refresh-token',
-            'enabled' => true,
-        ]);
-        $gateway = Mockery::mock(GoogleCalendarGateway::class);
-        $gateway->shouldReceive('verifyCalendar')->once()->andReturn([
-            'calendar_id' => 'primary',
-            'summary' => 'Calendario de prueba',
-        ]);
-        $this->app->instance(GoogleCalendarGateway::class, $gateway);
-
-        $this->actingAs($admin)
-            ->post(route('admin.integraciones.google-calendar.verify'))
-            ->assertRedirect()
-            ->assertSessionHas('status', fn ($status) => str_contains($status, 'Calendario de prueba'));
     }
 
     public function test_calendar_renueva_un_token_vencido_antes_de_sincronizar(): void

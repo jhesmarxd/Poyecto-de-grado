@@ -1,0 +1,40 @@
+@startuml
+autonumber
+actor "Administrador" as Admin
+boundary "Vista Canchas\n(admin/canchas/create.blade.php)" as View
+control "CanchaController" as Controller
+control "StoreCanchaRequest" as FormRequest
+control "CanchaService" as Service
+entity "Cancha" as Model
+database "Base de Datos\n(canchas)" as DB
+database "Sistema de Archivos\n(public/img/canchas)" as FS
+
+Admin -> View : Completa nombre, descripción, precio/hora, tipo_recinto
+Admin -> View : Carga archivo de imagen (PNG/JPG)
+Admin -> View : Clic en "Guardar cancha"
+View -> Controller : POST /admin/canchas (Multipart Form Data)
+activate Controller
+
+Controller -> FormRequest : validated()
+activate FormRequest
+FormRequest --> Controller : Datos validados
+deactivate FormRequest
+
+Controller -> Service : procesarDatos(datos)
+activate Service
+Service -> FS : move(public_path('img/canchas'), 'cancha-slug-uuid.png')
+FS --> Service : Archivo persistido con nombre único
+Service --> Controller : Datos con nombre de imagen generado
+deactivate Service
+
+Controller -> Model : create(datosProcesados)
+activate Model
+Model -> DB : INSERT INTO canchas (nombre, descripcion, precio_por_hora, imagen, estado...)
+DB --> Model : Confirmación de guardado (id generado)
+Model --> Controller : Instancia de Cancha
+deactivate Model
+
+Controller --> View : RedirectResponse a /admin/canchas con status("Cancha creada correctamente.")
+View --> Admin : Muestra mensaje de éxito y despliega la cancha en la tabla
+deactivate Controller
+@enduml

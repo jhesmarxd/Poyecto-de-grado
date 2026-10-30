@@ -1,0 +1,43 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class AdminDashboardController {
+    +index(EstadisticasService): View
+}
+
+class AdminReporteController {
+    +index(Request): View
+    +exportar(Request): StreamedResponse
+}
+
+class AdminChatbotMetricasController {
+    +index(ChatbotMetricasService): View
+}
+
+class EstadisticasService {
+    +metricas(): array
+    +reservasActivas(): int
+    +ingresosEstimados(): float
+    +reservasPorDia(): Collection
+    +reservasPorEstado(): Collection
+    +canchasMasUsadas(): Collection
+}
+
+class ReporteService {
+    +rangoFechas(Request): array
+    +reservasConFiltros(Request): Collection
+    +calcularResumen(Collection): array
+    +exportarCSV(Request): StreamedResponse
+}
+
+class ChatbotMetricasService {
+    +resumenGeneral(): array
+    +distribucionIntenciones(): Collection
+    +tasaEfectividad(): float
+    +latenciaPromedioMs(): int
+}
+
+AdminDashboardController ..> EstadisticasService : consume KPI
+AdminReporteController ..> ReporteService : filtra y exporta
+AdminChatbotMetricasController ..> ChatbotMetricasService : analiza NLP
+@enduml

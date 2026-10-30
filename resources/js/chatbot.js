@@ -40,10 +40,19 @@ document.addEventListener('DOMContentLoaded', function () {
     let avisoIncompatibilidadMostrado = false;
     let voces = [];
 
+    function actualizarEstadoVisual(abierto) {
+        document.body.classList.toggle('has-chatbot-open', abierto);
+        boton.setAttribute('aria-expanded', String(abierto));
+        document.querySelectorAll('[data-chatbot-open]').forEach(function (disparador) {
+            disparador.setAttribute('aria-expanded', String(abierto));
+        });
+    }
+
     function abrir() {
         ventana.classList.remove('d-none');
         icono.classList.add('d-none');
         iconoCerrar.classList.remove('d-none');
+        actualizarEstadoVisual(true);
         entrada.focus();
     }
 
@@ -52,6 +61,7 @@ document.addEventListener('DOMContentLoaded', function () {
         ventana.classList.add('d-none');
         icono.classList.remove('d-none');
         iconoCerrar.classList.add('d-none');
+        actualizarEstadoVisual(false);
     }
 
     document.querySelectorAll('[data-chatbot-open]').forEach(function (disparador) {
@@ -60,6 +70,8 @@ document.addEventListener('DOMContentLoaded', function () {
             abrir();
         });
     });
+
+    actualizarEstadoVisual(!ventana.classList.contains('d-none'));
 
     boton.addEventListener('click', () => {
         ventana.classList.contains('d-none') ? abrir() : cerrar();

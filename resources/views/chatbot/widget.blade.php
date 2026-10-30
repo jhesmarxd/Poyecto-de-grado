@@ -5,18 +5,19 @@
      @guest
          data-login-url="{{ route('login') }}"
          data-register-url="{{ route('register') }}"
-     @endguest>
+    @endguest>
     <button type="button" id="chatbot-toggle" class="chatbot-toggle" aria-label="Abrir chat de ayuda">
-        <span id="chatbot-icono" class="chatbot-icono">💬</span>
+        <span id="chatbot-icono" class="chatbot-icono"><i class="bi bi-headset" aria-hidden="true"></i></span>
         <span id="chatbot-cerrar" class="chatbot-icono d-none">✕</span>
     </button>
 
     <div id="chatbot-ventana" class="chatbot-ventana d-none">
         <div class="chatbot-header" data-chatbot-drag-handle
              title="Arrastra para mover la ventana">
+            <span class="chatbot-avatar" aria-hidden="true"><i class="bi bi-chat-heart"></i></span>
             <div class="chatbot-identidad">
                 <strong>{{ config('chatbot.nombre', 'WallyBot') }}</strong>
-                <span class="d-block small">Asistente virtual · en línea</span>
+                <span class="d-block small"><i class="bi bi-circle-fill" aria-hidden="true"></i> Asistente virtual en línea</span>
             </div>
             <div class="chatbot-header-acciones">
                 @if(auth()->check() && auth()->user()->rol === \App\Models\User::ROL_CLIENTE && auth()->user()->estaActivo())
@@ -37,17 +38,17 @@
 
         <div id="chatbot-mensajes" class="chatbot-mensajes">
             <div class="chatbot-mensaje bot">
-                ¡Hola! 👋 Soy {{ config('chatbot.nombre', 'WallyBot') }}.
-                Puedo ayudarte con horarios, precios, disponibilidad y reservas.
-                Escribe <em>"ayuda"</em> para ver mis opciones.
+                <strong>¡Hola! Soy {{ config('chatbot.nombre', 'WallyBot') }}.</strong>
+                <span>Puedo ayudarte con horarios, precios, disponibilidad y reservas. Escribe <em>"ayuda"</em> para ver mis opciones.</span>
             </div>
         </div>
 
         <form id="chatbot-form" class="chatbot-form" action="{{ route('chatbot.mensaje') }}" method="POST">
             @csrf
+            <label class="visually-hidden" for="chatbot-input">Escribe tu mensaje</label>
             <input type="text" id="chatbot-input" class="form-control form-control-sm"
                    placeholder="Escribe tu mensaje…" maxlength="500" autocomplete="off">
-            <button type="submit" class="btn btn-success btn-sm ms-2">Enviar</button>
+            <button type="submit" class="btn btn-success btn-sm"><span>Enviar</span><i class="bi bi-send" aria-hidden="true"></i></button>
         </form>
     </div>
 </div>

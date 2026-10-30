@@ -1,0 +1,39 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 1 - Diagrama de Secuencia: Login y Redirección por Rol
+
+actor "Cliente" as Cliente
+participant "LoginController" as Ctrl
+participant "Auth Guard" as Auth
+participant "Middleware" as MW
+database "Users Table" as DB
+
+Cliente -> Ctrl: GET /login
+Ctrl --> Cliente: Vista login.blade.php
+
+Cliente -> Ctrl: POST /login (email, password, remember)
+activate Ctrl
+Ctrl -> Auth: attempt(credentials, remember)
+Auth -> DB: SELECT * FROM users WHERE email = ?
+DB --> Auth: User record
+Auth --> Ctrl: User | false
+
+alt Credenciales válidas
+    Ctrl -> Auth: login(user)
+    Auth --> Ctrl: Session/Token creado
+    
+    alt user.esAdministrador()
+        Ctrl --> Cliente: Redirect → admin.dashboard
+    else user.esRecepcionista()
+        Ctrl --> Cliente: Redirect → recepcionista.reservas.hoy
+    else
+        Ctrl --> Cliente: Redirect → reservas.mis
+    end
+else Credenciales inválidas
+    Ctrl --> Cliente: Redirect back + errors
+end
+
+deactivate Ctrl
+
+@enduml

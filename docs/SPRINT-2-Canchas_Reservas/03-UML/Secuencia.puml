@@ -1,0 +1,70 @@
+@startuml
+!include ../plantuml/common.puml
+
+title Sprint 2 - Diagrama de Secuencia: Crear Reserva (Anti-solapamiento)
+
+actor "Cliente" as Cliente
+participant "ReservaController" as Ctrl
+participant "ReservaService" as Svc
+participant "PoliticaReservasService" as Pol
+database "DB (Transacción)" as DB
+participant "SyncReservationToGoogleCalendar" as Job
+
+Cliente -> Ctrl: POST /reservas (cancha_id, horario_id, fecha, balon_id)
+activate Ctrl
+Ctrl -> Svc: crearReserva(user, data)
+activate Svc
+
+Svc -> DB: BEGIN TRANSACTION
+note right of DB: Orden fijo de locks previene deadlocks
+
+Svc -> DB: SELECT * FROM canchas WHERE id = ? FOR UPDATE
+DB --> Svc: Cancha (locked)
+
+Svc -> DB: SELECT * FROM horarios WHERE id = ? AND cancha_id = ? FOR UPDATE
+DB --> Svc: Horario (locked)
+
+Svc -> Pol: validarRangoOperativo(cancha, fecha, inicio, fin)
+Pol --> Svc: Resultado { disponible, mensaje }
+
+alt No disponible
+    Svc -> DB: ROLLBACK
+    Svc --> Ctrl: Exception 422 (mensaje política)
+else Disponible
+    Svc -> DB: SELECT COUNT(*) FROM reservas WHERE cancha_id = ? AND fecha = ? AND hora_inicio < ? AND hora_fin > ? FOR UPDATE
+    DB --> Svc: count
+
+    alt count > 0 (solapamiento cancha)
+        Svc -> DB: ROLLBACK
+        Svc --> Ctrl: Exception 409 "Horario ya reservado"
+    else
+        alt balon_id proporcionado
+            Svc -> DB: SELECT * FROM balones WHERE id = ? FOR UPDATE
+            DB --> Svc: Balon (locked)
+            
+            Svc -> DB: SELECT COUNT(*) FROM reservas WHERE balon_id = ? AND fecha = ? AND hora_inicio < ? AND hora_fin > ?
+            DB --> Svc: count_balon
+            
+            alt count_balon > 0 (solapamiento balón)
+                Svc -> DB: ROLLBACK
+                Svc --> Ctrl: Exception 409 "Balón ya reservado"
+            end
+        end
+        
+        Svc -> DB: INSERT INTO reservas (...) VALUES (...)
+        DB --> Svc: Reserva creada (id)
+        Svc -> DB: COMMIT
+        Svc --> Ctrl: Reserva
+        
+        par Async
+            Svc -> Job: dispatch(reserva.id)
+            Job -> Job: Sync Google Calendar
+        end
+    end
+end
+
+deactivate Svc
+Ctrl --> Cliente: Redirect → reservas.mis + success message
+deactivate Ctrl
+
+@enduml
