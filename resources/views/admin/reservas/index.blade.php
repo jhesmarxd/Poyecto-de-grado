@@ -14,8 +14,6 @@
         </div>
     </div>
 
-    @include('admin.reservas._navigation')
-
     <div class="card">
         <div class="card-body p-0">
             <form method="GET" action="{{ route('admin.reservas.index') }}" class="row g-2 align-items-end px-4 pt-4 pb-2">

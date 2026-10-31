@@ -11,7 +11,6 @@
         </div>
     </div>
 
-    @include('admin.reservas._navigation')
 
     @include('reservas.partials.calendar', [
         'calendarRole' => 'administrador',

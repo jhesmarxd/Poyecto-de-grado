@@ -3,7 +3,7 @@
 @section('title', 'Conversaciones del chatbot')
 
 @section('content')
-@include('admin._analysis_navigation')
+
 
     <div class="hero">
         <div class="hero-text">

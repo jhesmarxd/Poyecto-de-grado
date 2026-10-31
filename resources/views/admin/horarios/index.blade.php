@@ -3,7 +3,7 @@
 @section('title', 'Franjas reservables')
 
 @section('content')
-@include('admin._resources_navigation')
+
 
     <div class="hero">
         <div class="hero-text">
