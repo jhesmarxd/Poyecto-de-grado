@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('horario_id')->constrained()->cascadeOnDelete();
             $table->date('fecha');
             $table->decimal('monto_total', 10, 2);
-            $table->enum('estado', ['pendiente', 'confirmada', 'cancelada', 'completada'])->default('pendiente');
+            $table->enum('estado', ['pendiente', 'confirmada', 'cancelada', 'completada', 'afectada_por_configuracion', 'cancelada_por_complejo', 'reprogramada'])->default('pendiente');
             $table->text('observaciones')->nullable();
             $table->timestamps();
 

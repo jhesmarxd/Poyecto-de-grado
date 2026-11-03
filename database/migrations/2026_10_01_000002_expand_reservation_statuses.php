@@ -28,9 +28,11 @@ return new class extends Migration
                 $table->dropColumn('activa');
             });
             Schema::table('reservas', function (Blueprint $table) {
-                $table->tinyInteger('activa')->nullable()->virtualAs(
-                    "CASE WHEN estado IN ('cancelada','cancelada_por_complejo','reprogramada') THEN NULL ELSE 1 END"
-                );
+                $column = $table->tinyInteger('activa')->nullable();
+                $expression = "CASE WHEN estado IN ('cancelada','cancelada_por_complejo','reprogramada') THEN NULL ELSE 1 END";
+                DB::getDriverName() === 'pgsql'
+                    ? $column->storedAs($expression)
+                    : $column->virtualAs($expression);
             });
             Schema::table('reservas', function (Blueprint $table) {
                 $table->unique(['cancha_id', 'fecha', 'horario_id', 'activa'], 'reservas_sin_duplicados');
@@ -51,9 +53,11 @@ return new class extends Migration
             Schema::table('reservas', fn (Blueprint $table) => $table->dropUnique('reservas_sin_duplicados'));
             Schema::table('reservas', fn (Blueprint $table) => $table->dropColumn('activa'));
             Schema::table('reservas', function (Blueprint $table) {
-                $table->tinyInteger('activa')->nullable()->virtualAs(
-                    "CASE WHEN estado = 'cancelada' THEN NULL ELSE 1 END"
-                );
+                $column = $table->tinyInteger('activa')->nullable();
+                $expression = "CASE WHEN estado = 'cancelada' THEN NULL ELSE 1 END";
+                DB::getDriverName() === 'pgsql'
+                    ? $column->storedAs($expression)
+                    : $column->virtualAs($expression);
             });
             Schema::table('reservas', fn (Blueprint $table) => $table->unique(['cancha_id', 'fecha', 'horario_id', 'activa'], 'reservas_sin_duplicados'));
         }
