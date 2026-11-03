@@ -23,7 +23,7 @@ return new class extends Migration
             if (! str_contains((string) ($estado->Type ?? ''), "'reprogramada'")) {
                 DB::statement("ALTER TABLE reservas MODIFY estado ENUM('pendiente','confirmada','cancelada','completada','afectada_por_configuracion','cancelada_por_complejo','reprogramada') NOT NULL DEFAULT 'pendiente'");
             }
-            DB::statement("ALTER TABLE reservas ADD activa TINYINT GENERATED ALWAYS AS (CASE WHEN estado IN ('cancelada','cancelada_por_complejo','reprogramada') THEN NULL ELSE 1 END) STORED");
+            DB::statement("ALTER TABLE reservas ADD activa TINYINT GENERATED ALWAYS AS (CASE WHEN estado IN ('cancelada','cancelada_por_complejo','reprogramada') THEN NULL ELSE 1 END) VIRTUAL");
             Schema::table('reservas', function (Blueprint $table) {
                 $table->unique(['cancha_id', 'fecha', 'horario_id', 'activa'], 'reservas_sin_duplicados');
             });
@@ -51,7 +51,7 @@ return new class extends Migration
             Schema::table('reservas', fn (Blueprint $table) => $table->dropUnique('reservas_sin_duplicados'));
             DB::statement('ALTER TABLE reservas DROP COLUMN activa');
             DB::statement("ALTER TABLE reservas MODIFY estado ENUM('pendiente','confirmada','cancelada','completada') NOT NULL DEFAULT 'pendiente'");
-            DB::statement("ALTER TABLE reservas ADD activa TINYINT GENERATED ALWAYS AS (CASE WHEN estado = 'cancelada' THEN NULL ELSE 1 END) STORED");
+            DB::statement("ALTER TABLE reservas ADD activa TINYINT GENERATED ALWAYS AS (CASE WHEN estado = 'cancelada' THEN NULL ELSE 1 END) VIRTUAL");
             Schema::table('reservas', fn (Blueprint $table) => $table->unique(['cancha_id', 'fecha', 'horario_id', 'activa'], 'reservas_sin_duplicados'));
         } else {
             Schema::table('reservas', fn (Blueprint $table) => $table->dropUnique('reservas_sin_duplicados'));
