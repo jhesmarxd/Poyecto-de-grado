@@ -1,10 +1,6 @@
 import { CHATBOT_NETWORK_ERROR, interpretarRespuestaChatbot } from './chatbot-http';
 
-/**
- * Widget de chat y llamada de voz de WallyBot.
- * El navegador convierte voz a texto y lee las respuestas; Laravel recibe
- * únicamente el mismo campo `mensaje` que usa el formulario escrito.
- */
+/** Widget de chat escrito de WallyBot. */
 document.addEventListener('DOMContentLoaded', function () {
     const widget = document.getElementById('chatbot-widget');
     if (!widget) return;
@@ -19,26 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const entrada = document.getElementById('chatbot-input');
     const icono = document.getElementById('chatbot-icono');
     const iconoCerrar = document.getElementById('chatbot-cerrar');
-    const botonLlamada = document.getElementById('chatbot-llamada');
-    const estadoVoz = document.getElementById('chatbot-voz-estado');
-    const estadoVozTexto = document.getElementById('chatbot-voz-estado-texto');
-    const nombreBot = widget.dataset.chatbotName || 'WallyBot';
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const vozCompatible = Boolean(
-        botonLlamada
-        && SpeechRecognition
-        && window.speechSynthesis
-        && window.SpeechSynthesisUtterance
-        && window.isSecureContext
-    );
-
-    let reconocimiento = null;
-    let llamadaActiva = false;
     let procesando = false;
-    let reinicioEscucha = null;
-    let avisoIncompatibilidadMostrado = false;
-    let voces = [];
 
     function actualizarEstadoVisual(abierto) {
         document.body.classList.toggle('has-chatbot-open', abierto);
@@ -57,7 +34,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function cerrar() {
-        finalizarLlamada();
         ventana.classList.add('d-none');
         icono.classList.remove('d-none');
         iconoCerrar.classList.add('d-none');
@@ -212,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     estado.textContent = item.estado || 'Disponible';
                     cuerpo.append(titulo, descripcion, estado);
                     botonOpcion.appendChild(cuerpo);
-                    botonOpcion.addEventListener('click', () => enviarMensaje(item.mensaje, false));
+                    botonOpcion.addEventListener('click', () => enviarMensaje(item.mensaje));
                     lista.appendChild(botonOpcion);
                 });
 
@@ -227,7 +203,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     botonAccion.type = 'button';
                     botonAccion.className = `chatbot-reserva-accion is-${accion.estilo || 'secondary'}`;
                     botonAccion.textContent = accion.etiqueta;
-                    botonAccion.addEventListener('click', () => enviarMensaje(accion.mensaje, false));
+                    botonAccion.addEventListener('click', () => enviarMensaje(accion.mensaje));
                     acciones.appendChild(botonAccion);
                 });
                 mensajes.appendChild(acciones);
@@ -272,201 +248,7 @@ document.addEventListener('DOMContentLoaded', function () {
         mensajes.scrollTop = mensajes.scrollHeight;
     }
 
-    function actualizarEstadoVoz(estado, detalle = '') {
-        if (!estadoVoz || !estadoVozTexto || !botonLlamada) return;
-
-        estadoVoz.classList.remove('is-listening', 'is-processing', 'is-speaking');
-        const etiquetas = {
-            inactiva: 'Llamada inactiva',
-            escuchando: 'Escuchando…',
-            procesando: 'Consultando reservas…',
-            hablando: `${nombreBot} está respondiendo…`
-        };
-
-        if (estado === 'inactiva') {
-            estadoVoz.classList.add('d-none');
-        } else {
-            estadoVoz.classList.remove('d-none');
-            estadoVoz.classList.add({
-                escuchando: 'is-listening',
-                procesando: 'is-processing',
-                hablando: 'is-speaking'
-            }[estado]);
-        }
-
-        estadoVozTexto.textContent = detalle || etiquetas[estado];
-        botonLlamada.classList.toggle('is-active', llamadaActiva);
-        botonLlamada.setAttribute('aria-pressed', llamadaActiva ? 'true' : 'false');
-        botonLlamada.setAttribute('aria-label', llamadaActiva ? 'Terminar llamada de voz' : 'Iniciar llamada de voz');
-        botonLlamada.title = llamadaActiva ? 'Terminar llamada de voz' : 'Iniciar llamada de voz con WallyBot';
-
-        const iconoTelefono = botonLlamada.querySelector('i');
-        if (iconoTelefono) {
-            iconoTelefono.className = llamadaActiva
-                ? 'bi bi-telephone-x-fill'
-                : 'bi bi-telephone-fill';
-        }
-    }
-
-    function cargarVoces() {
-        voces = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
-    }
-
-    function vozEnEspanol() {
-        return voces.find((voz) => voz.lang.toLowerCase() === 'es-bo')
-            || voces.find((voz) => voz.lang.toLowerCase() === 'es-419')
-            || voces.find((voz) => voz.lang.toLowerCase().startsWith('es'))
-            || null;
-    }
-
-    function textoParaVoz(texto) {
-        return texto
-            .replace(/https?:\/\/\S+/gi, ' enlace disponible en el chat ')
-            .replace(/[\*_`#>•]/g, ' ')
-            .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '')
-            .replace(/\s+/g, ' ')
-            .trim();
-    }
-
-    function detenerReconocimiento() {
-        clearTimeout(reinicioEscucha);
-        if (!reconocimiento) return;
-
-        try {
-            reconocimiento.abort();
-        } catch (error) {
-            // El reconocimiento ya estaba detenido.
-        }
-    }
-
-    function iniciarEscucha() {
-        if (!llamadaActiva || procesando) return;
-
-        window.speechSynthesis?.cancel();
-        actualizarEstadoVoz('escuchando');
-
-        if (!reconocimiento) crearReconocimiento();
-
-        try {
-            reconocimiento.start();
-        } catch (error) {
-            reinicioEscucha = setTimeout(function () {
-                if (llamadaActiva && !procesando) iniciarEscucha();
-            }, 500);
-        }
-    }
-
-    function hablar(texto) {
-        if (!llamadaActiva || !window.speechSynthesis) return;
-
-        detenerReconocimiento();
-        window.speechSynthesis.cancel();
-        actualizarEstadoVoz('hablando');
-
-        const locucion = new SpeechSynthesisUtterance(textoParaVoz(texto));
-        const voz = vozEnEspanol();
-        locucion.lang = voz?.lang || 'es-BO';
-        locucion.voice = voz;
-        locucion.rate = 1;
-        locucion.pitch = 1;
-        locucion.onend = function () {
-            if (llamadaActiva) iniciarEscucha();
-        };
-        locucion.onerror = function () {
-            if (llamadaActiva) iniciarEscucha();
-        };
-
-        window.speechSynthesis.speak(locucion);
-    }
-
-    function finalizarLlamada() {
-        if (!llamadaActiva && !reconocimiento) return;
-
-        llamadaActiva = false;
-        detenerReconocimiento();
-        reconocimiento = null;
-        window.speechSynthesis?.cancel();
-        actualizarEstadoVoz('inactiva');
-    }
-
-    function manejarErrorVoz(evento) {
-        if (!llamadaActiva || evento.error === 'aborted') return;
-
-        const erroresFatales = {
-            'not-allowed': 'No se concedió permiso para usar el micrófono. Puedes continuar escribiendo en el chat.',
-            'service-not-allowed': 'El navegador bloqueó el servicio de voz. Puedes continuar escribiendo en el chat.',
-            'audio-capture': 'No se encontró un micrófono disponible. Puedes continuar escribiendo en el chat.',
-            'network': 'El reconocimiento de voz no está disponible en este momento. Puedes continuar escribiendo.'
-        };
-
-        if (erroresFatales[evento.error]) {
-            agregarMensaje(erroresFatales[evento.error], 'bot');
-            finalizarLlamada();
-            return;
-        }
-
-        if (evento.error !== 'no-speech') {
-            actualizarEstadoVoz('escuchando', 'No entendí. Intentando escuchar nuevamente…');
-        }
-    }
-
-    function crearReconocimiento() {
-        reconocimiento = new SpeechRecognition();
-        reconocimiento.lang = 'es-BO';
-        reconocimiento.continuous = false;
-        reconocimiento.interimResults = true;
-        reconocimiento.maxAlternatives = 1;
-        reconocimiento.onstart = function () {
-            if (llamadaActiva) actualizarEstadoVoz('escuchando');
-        };
-        reconocimiento.onresult = function (evento) {
-            let textoFinal = '';
-            let textoParcial = '';
-
-            for (let i = evento.resultIndex; i < evento.results.length; i += 1) {
-                const fragmento = evento.results[i][0].transcript;
-                if (evento.results[i].isFinal) textoFinal += fragmento;
-                else textoParcial += fragmento;
-            }
-
-            if (textoParcial.trim()) {
-                actualizarEstadoVoz('escuchando', `Escuchando: ${textoParcial.trim()}`);
-            }
-
-            if (textoFinal.trim()) {
-                actualizarEstadoVoz('procesando');
-                enviarMensaje(textoFinal.trim(), true);
-            }
-        };
-        reconocimiento.onerror = manejarErrorVoz;
-        reconocimiento.onend = function () {
-            if (llamadaActiva && !procesando && estadoVoz?.classList.contains('is-listening')) {
-                reinicioEscucha = setTimeout(iniciarEscucha, 350);
-            }
-        };
-    }
-
-    function iniciarLlamada() {
-        abrir();
-
-        if (!vozCompatible) {
-            if (!avisoIncompatibilidadMostrado) {
-                agregarMensaje(
-                    'La llamada de voz necesita Chrome o Edge, permiso de micrófono y una conexión HTTPS o localhost. El chat escrito sigue disponible.',
-                    'bot'
-                );
-                avisoIncompatibilidadMostrado = true;
-            }
-            return;
-        }
-
-        llamadaActiva = true;
-        cargarVoces();
-        actualizarEstadoVoz('hablando');
-        hablar(`Hola, soy ${nombreBot}. ¿En qué puedo ayudarte?`);
-    }
-
-    async function enviarMensaje(texto, desdeVoz = false) {
+    async function enviarMensaje(texto) {
         if (!texto || procesando) return;
 
         procesando = true;
@@ -482,13 +264,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        if (llamadaActiva) {
-            detenerReconocimiento();
-            window.speechSynthesis?.cancel();
-            actualizarEstadoVoz('procesando');
-        }
-
-        let respuestaParaVoz = '';
+        let respuestaTexto = '';
         let componentes = [];
         const indicadorCarga = agregarIndicadorCarga();
 
@@ -504,23 +280,17 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             const resultado = await interpretarRespuestaChatbot(respuesta);
-            respuestaParaVoz = resultado.respuesta;
+            respuestaTexto = resultado.respuesta;
             componentes = resultado.componentes || [];
         } catch (error) {
-            respuestaParaVoz = CHATBOT_NETWORK_ERROR;
+            respuestaTexto = CHATBOT_NETWORK_ERROR;
         } finally {
             indicadorCarga.remove();
-            agregarMensaje(respuestaParaVoz, 'bot');
+            agregarMensaje(respuestaTexto, 'bot');
             agregarComponentes(componentes);
             procesando = false;
             entrada.disabled = false;
             entrada.focus();
-        }
-
-        if (llamadaActiva) {
-            hablar(respuestaParaVoz);
-        } else if (desdeVoz) {
-            actualizarEstadoVoz('inactiva');
         }
     }
 
@@ -528,24 +298,6 @@ document.addEventListener('DOMContentLoaded', function () {
         evento.preventDefault();
         const texto = entrada.value.trim();
         if (!texto) return;
-        enviarMensaje(texto, false);
+        enviarMensaje(texto);
     });
-
-    if (botonLlamada) {
-        cargarVoces();
-        window.speechSynthesis?.addEventListener('voiceschanged', cargarVoces);
-        if (!vozCompatible) {
-            botonLlamada.classList.add('is-unavailable');
-            botonLlamada.title = 'Voz no disponible en este navegador o conexión';
-        }
-
-        botonLlamada.addEventListener('click', function () {
-            llamadaActiva ? finalizarLlamada() : iniciarLlamada();
-        });
-    }
-
-    document.addEventListener('visibilitychange', function () {
-        if (document.hidden) finalizarLlamada();
-    });
-    window.addEventListener('pagehide', finalizarLlamada);
 });

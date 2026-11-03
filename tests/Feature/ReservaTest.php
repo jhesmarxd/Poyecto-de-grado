@@ -30,7 +30,7 @@ class ReservaTest extends TestCase
 
     private function cliente(): User
     {
-        return User::factory()->create(['rol' => User::ROL_CLIENTE]);
+        return User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567']);
     }
 
     private function admin(): User
@@ -115,6 +115,33 @@ class ReservaTest extends TestCase
             $fecha,
             Reserva::first()->fecha->toDateString()
         );
+    }
+
+    public function test_no_se_reserva_sin_celular_valido_y_se_puede_guardar_sin_perder_la_seleccion(): void
+    {
+        $fecha = now()->addDays(3)->toDateString();
+        [$cancha, $horario] = $this->canchaConHorario($fecha);
+        $cliente = $this->cliente();
+        $cliente->update(['telefono' => null]);
+        $datos = ['cancha_id' => $cancha->id, 'horario_id' => $horario->id, 'fecha' => $fecha];
+
+        $this->actingAs($cliente)->postJson(route('reservas.store'), $datos)
+            ->assertUnprocessable()->assertJsonValidationErrors('telefono');
+        $this->assertDatabaseCount('reservas', 0);
+
+        $this->postJson(route('reservas.celular'), ['telefono' => '12345678'])
+            ->assertUnprocessable()->assertJsonValidationErrors('telefono');
+        $this->postJson(route('reservas.celular'), ['telefono' => '+59171234567'])
+            ->assertOk()->assertJsonPath('telefono', '+59171234567');
+        $this->assertSame('+59171234567', $cliente->fresh()->telefono);
+
+        $this->postJson(route('reservas.store'), $datos)
+            ->assertOk()->assertJsonPath('redirect', route('reservas.mis'));
+        $this->assertDatabaseHas('reservas', [
+            'user_id' => $cliente->id, 'cancha_id' => $cancha->id,
+            'horario_id' => $horario->id,
+        ]);
+        $this->assertSame($fecha, Reserva::first()->fecha->toDateString());
     }
 
     public function test_se_puede_reservar_trayendo_el_propio_balon(): void

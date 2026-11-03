@@ -672,13 +672,13 @@ class ChatbotTest extends TestCase
         $this->assertDatabaseHas('reservas', ['user_id' => $cliente->id, 'balon_id' => $elegido->id]);
     }
 
-    public function test_el_boton_de_llamada_solo_se_renderiza_para_clientes_activos(): void
+    public function test_el_chatbot_no_ofrece_llamadas_a_ningun_rol(): void
     {
         auth()->logout();
-        $this->get('/')->assertOk()->assertDontSee('id="chatbot-llamada"', false);
+        $this->get('/')->assertOk()->assertDontSee('id="chatbot-llamada"', false)->assertDontSee('id="chatbot-voz-estado"', false);
 
         $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
-        $this->actingAs($cliente)->get('/')->assertOk()->assertSee('id="chatbot-llamada"', false);
+        $this->actingAs($cliente)->get('/')->assertOk()->assertDontSee('id="chatbot-llamada"', false)->assertDontSee('id="chatbot-voz-estado"', false);
 
         $admin = User::factory()->create(['rol' => User::ROL_ADMIN, 'estado' => true]);
         $this->actingAs($admin)->get('/')->assertOk()->assertDontSee('id="chatbot-llamada"', false);

@@ -175,6 +175,7 @@ class GoogleAuthController extends Controller
     {
         Auth::login($user, true);
         $request->session()->regenerate();
+        $request->session()->forget('reserva_pendiente');
 
         return redirect()->intended(match ($user->rol) {
             User::ROL_ADMIN => route('admin.dashboard'),

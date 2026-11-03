@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Cancha;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -30,6 +31,7 @@ class ClientExperienceTest extends TestCase
 
     public function test_disponibilidad_conserva_el_formulario_publico_y_adopta_los_tres_pasos(): void
     {
+        Cancha::factory()->create();
         $this->get(route('disponibilidad.index'))
             ->assertOk()
             ->assertSee('class="availability-wizard card"', false)
@@ -45,6 +47,61 @@ class ClientExperienceTest extends TestCase
             ->assertOk()
             ->assertSee('class="client-ui"', false)
             ->assertSee('class="client-bottom-nav"', false);
+    }
+
+    public function test_el_visitante_retoma_su_cancha_y_fecha_despues_de_registrarse(): void
+    {
+        $cancha = Cancha::factory()->create([
+            'nombre' => 'Cancha Central',
+            'descripcion' => 'Piso sintético y graderías.',
+            'imagen' => 'cancha-1.jpeg',
+        ]);
+        $fecha = now()->addDay()->toDateString();
+        $destino = route('disponibilidad.index', ['cancha_id' => $cancha->id, 'fecha' => $fecha]);
+
+        $this->get(route('disponibilidad.index'))
+            ->assertOk()
+            ->assertSee('cancha-picker__card')
+            ->assertSee('Piso sintético y graderías.')
+            ->assertSee('cancha-1.jpeg');
+
+        $this->get(route('disponibilidad.index', [
+            'consultar' => 1, 'cancha_id' => $cancha->id, 'fecha' => $fecha,
+        ]))->assertRedirect(route('login'));
+
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertDontSee('Inicia sesión o regístrate para consultar los horarios de');
+
+        $this->post(route('register'), [
+            'name' => 'Cliente Nuevo',
+            'email' => 'nuevo@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertRedirect($destino);
+
+        $this->get($destino)
+            ->assertOk()
+            ->assertSee('data-cancha-name="Cancha Central"', false)
+            ->assertSee('checked', false)
+            ->assertSee('value="'.$fecha.'"', false);
+    }
+
+    public function test_el_visitante_retoma_su_consulta_despues_de_iniciar_sesion(): void
+    {
+        $cancha = Cancha::factory()->create();
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'password' => 'password123']);
+        $fecha = now()->addDay()->toDateString();
+        $destino = route('disponibilidad.index', ['cancha_id' => $cancha->id, 'fecha' => $fecha]);
+
+        $this->get(route('disponibilidad.index', [
+            'consultar' => 1, 'cancha_id' => $cancha->id, 'fecha' => $fecha,
+        ]))->assertRedirect(route('login'));
+
+        $this->post(route('login'), [
+            'email' => $cliente->email,
+            'password' => 'password123',
+        ])->assertRedirect($destino);
     }
 
     public function test_perfil_y_notificaciones_utilizan_los_componentes_del_cliente(): void

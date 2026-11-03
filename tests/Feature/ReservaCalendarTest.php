@@ -121,6 +121,21 @@ class ReservaCalendarTest extends TestCase
             ->assertJsonPath('0.extendedProps.google_url', 'https://calendar.google.com/calendar/event?eid=propia');
     }
 
+    public function test_el_titulo_del_cliente_muestra_el_intervalo_real_completo(): void
+    {
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE]);
+        $this->reserva($cliente, '2026-10-10', [
+            'hora_inicio_reserva' => '19:00:00',
+            'hora_fin_reserva' => '21:00:00',
+        ]);
+
+        $this->actingAs($cliente)
+            ->getJson(route('reservas.mis.eventos', $this->rango()))
+            ->assertOk()
+            ->assertJsonPath('0.title', '19:00–21:00 | Cancha Central')
+            ->assertJsonPath('0.extendedProps.hora_fin', '21:00');
+    }
+
     public function test_el_fin_del_rango_es_exclusivo_y_los_filtros_se_aplican(): void
     {
         $admin = User::factory()->create(['rol' => User::ROL_ADMIN]);

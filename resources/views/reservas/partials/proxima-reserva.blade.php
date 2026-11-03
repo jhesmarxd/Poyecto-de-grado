@@ -16,7 +16,14 @@
                  data-upcoming-src="{{ asset('img/iconos/reloj tiempo icono .gif') }}"
                  data-active-src="{{ asset('img/iconos/animacion de carga balon voley .gif') }}">
         </div>
-        <div>
+        <div class="reservation-countdown__court-image">
+            @if ($reserva->cancha->imagenUrl())
+                <img src="{{ $reserva->cancha->imagenUrl() }}" alt="{{ $reserva->cancha->nombre }}" loading="lazy">
+            @else
+                <i class="bi bi-grid-3x2" aria-hidden="true"></i>
+            @endif
+        </div>
+        <div class="reservation-countdown__details">
             <span class="reservation-countdown__status" data-countdown-status>Reserva próxima</span>
             <h2 id="reservation-countdown-title">{{ $reserva->cancha->nombre }}</h2>
             <p>
@@ -29,7 +36,12 @@
 
     <div class="reservation-countdown__timer">
         <span data-countdown-caption>Comienza en</span>
-        <strong data-countdown-value role="timer" aria-live="off">--:--:--</strong>
+        <div class="reservation-countdown__units" role="timer" aria-live="off" aria-label="Tiempo restante">
+            <div class="reservation-countdown__unit"><strong data-countdown-days>00</strong><small>días</small></div>
+            <div class="reservation-countdown__unit"><strong data-countdown-hours>00</strong><small>horas</small></div>
+            <div class="reservation-countdown__unit"><strong data-countdown-minutes>00</strong><small>min</small></div>
+            <div class="reservation-countdown__unit" data-countdown-seconds-unit hidden><strong data-countdown-seconds>00</strong><small>seg</small></div>
+        </div>
         <small>Hora sincronizada con el sistema</small>
     </div>
 </section>

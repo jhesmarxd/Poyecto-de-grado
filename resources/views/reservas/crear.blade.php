@@ -32,7 +32,18 @@
             </aside>
 
             <section class="booking-form card" aria-labelledby="booking-ball-title">
-                <form method="POST" action="{{ route('reservas.store') }}">
+                <form method="POST" action="{{ route('reservas.store') }}" data-reservation-checkout data-no-confirm
+                      data-phone-url="{{ route('reservas.celular') }}"
+                      data-phone="{{ auth()->user()->telefono }}"
+                      data-customer="{{ auth()->user()->name }}" data-email="{{ auth()->user()->email }}"
+                      data-court="{{ $cancha->nombre }}"
+                      data-features="{{ collect([$cancha->descripcion, $cancha->tipo_piso, $cancha->tipo_recinto])->filter()->unique()->implode(' · ') }}"
+                      data-date="{{ \Carbon\Carbon::parse($fecha)->translatedFormat('l d \d\e F \d\e Y') }}"
+                      data-start="{{ \Carbon\Carbon::parse($horario->hora_inicio)->format('H:i') }}"
+                      data-end="{{ \Carbon\Carbon::parse($horario->hora_fin)->format('H:i') }}"
+                      data-duration="{{ (int) \Carbon\Carbon::parse($horario->hora_inicio)->diffInMinutes(\Carbon\Carbon::parse($horario->hora_fin)) }}"
+                      data-list-url="{{ route('reservas.mis', ['vista' => 'listado']) }}">
+                    <input type="hidden" data-availability-url value="{{ route('disponibilidad.index', ['cancha_id' => $cancha->id, 'fecha' => $fecha]) }}">
                     @csrf
                     <input type="hidden" name="cancha_id" value="{{ $cancha->id }}">
                     <input type="hidden" name="horario_id" value="{{ $horario->id }}">
@@ -95,7 +106,7 @@
                            class="btn btn--ghost"><i class="bi bi-arrow-left" aria-hidden="true"></i> Volver</a>
                         <span class="spacer"></span>
                         <button type="submit" class="btn btn--primary">
-                            <i class="bi bi-check-circle" aria-hidden="true"></i> Confirmar reserva
+                            <i class="bi bi-arrow-right-circle" aria-hidden="true"></i> Continuar con la reserva
                         </button>
                     </div>
                 </form>

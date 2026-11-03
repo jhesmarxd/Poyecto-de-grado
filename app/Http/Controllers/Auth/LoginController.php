@@ -79,4 +79,9 @@ class LoginController extends Controller
             default => route('home'),
         };
     }
+
+    protected function authenticated(Request $request, User $user): void
+    {
+        $request->session()->forget('reserva_pendiente');
+    }
 }

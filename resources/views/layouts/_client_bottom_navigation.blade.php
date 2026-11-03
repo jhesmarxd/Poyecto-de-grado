@@ -19,6 +19,6 @@
     </a>
     <button type="button" class="client-bottom-nav__item client-bottom-nav__item--assistant" data-chatbot-open
             aria-controls="chatbot-ventana" aria-expanded="false">
-        <i class="bi bi-headset" aria-hidden="true"></i><span>Asistente</span>
+        <i class="bi bi-chat-dots-fill" aria-hidden="true"></i><span>Asistente</span>
     </button>
 </nav>

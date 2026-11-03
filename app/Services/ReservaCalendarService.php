@@ -124,7 +124,10 @@ class ReservaCalendarService
 
     private function eventoCliente(Reserva $reserva): array
     {
-        $base = $this->eventoBase($reserva, $reserva->cancha->nombre);
+        $base = $this->eventoBase(
+            $reserva,
+            $reserva->iniciaEn()->format('H:i').'–'.$reserva->finalizaEn()->format('H:i').' | '.$reserva->cancha->nombre
+        );
         $google = $reserva->googleCalendarEvent;
         $base['extendedProps'] = [
             'estado' => $reserva->estadoLabel(),

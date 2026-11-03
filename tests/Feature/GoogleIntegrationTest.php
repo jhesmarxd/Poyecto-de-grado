@@ -6,6 +6,7 @@ use App\Contracts\GoogleCalendarGateway;
 use App\Jobs\SyncReservationToGoogleCalendar;
 use App\Models\GoogleCalendarConnection;
 use App\Models\GoogleCalendarEvent;
+use App\Models\Cancha;
 use App\Models\Reserva;
 use App\Models\SocialAccount;
 use App\Models\User;
@@ -57,6 +58,36 @@ class GoogleIntegrationTest extends TestCase
             'provider' => SocialAccount::PROVIDER_GOOGLE,
             'provider_user_id' => 'google-user-123',
         ]);
+    }
+
+    public function test_primer_ingreso_con_google_autentica_al_cliente_y_retoma_su_consulta(): void
+    {
+        $cancha = Cancha::factory()->create();
+        $fecha = now()->addDay()->toDateString();
+        $destino = route('disponibilidad.index', ['cancha_id' => $cancha->id, 'fecha' => $fecha]);
+
+        $this->get(route('disponibilidad.index', [
+            'consultar' => 1, 'cancha_id' => $cancha->id, 'fecha' => $fecha,
+        ]))->assertRedirect(route('login'));
+
+        $googleUser = GoogleUser::fake([
+            'id' => 'google-primer-ingreso',
+            'name' => 'Cliente Nuevo',
+            'email' => 'primer.ingreso@example.com',
+            'email_verified' => true,
+        ]);
+        $provider = Mockery::mock(GoogleProvider::class);
+        $provider->shouldReceive('user')->once()->andReturn($googleUser);
+        Socialite::shouldReceive('driver')->once()->with('google')->andReturn($provider);
+
+        $this->withSession(['google_oauth_intent' => 'login'])
+            ->get(route('auth.google.callback'))
+            ->assertRedirect($destino);
+
+        $user = User::query()->where('email', 'primer.ingreso@example.com')->firstOrFail();
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame(User::ROL_CLIENTE, $user->rol);
+        $this->assertNull($user->password);
     }
 
     public function test_google_login_rejects_an_unverified_email(): void

@@ -41,7 +41,7 @@
                     description="Revisa tus turnos y sus estados."
                     tone="sky" />
                 <x-client-action-card
-                    icon="bi-headset"
+                    icon="bi-chat-dots-fill"
                     title="Abrir asistente"
                     description="Recibe ayuda con horarios y reservas."
                     tone="teal"

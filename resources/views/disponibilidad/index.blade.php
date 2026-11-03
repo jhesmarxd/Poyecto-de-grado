@@ -14,22 +14,13 @@
         </header>
 
         <form method="GET" action="{{ route('disponibilidad.index') }}" class="availability-wizard card">
+            <input type="hidden" name="consultar" value="1">
             <div class="availability-step">
                 <span class="availability-step__number">1</span>
                 <div class="availability-step__content">
-                    <label for="cancha_id">Elige la cancha</label>
+                    <span class="availability-step__label">Elige la cancha</span>
                     <small>Selecciona dónde quieres jugar.</small>
-                    <div class="client-control-with-icon">
-                        <i class="bi bi-grid-3x2" aria-hidden="true"></i>
-                        <select name="cancha_id" id="cancha_id" class="form-select" required>
-                            <option value="">Selecciona una cancha…</option>
-                            @foreach ($canchas as $c)
-                                <option value="{{ $c->id }}" @selected($cancha && $cancha->id === $c->id)>
-                                    {{ $c->nombre }} — Bs. {{ number_format($c->precio_por_hora, 2) }}/h
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <x-cancha-picker :canchas="$canchas" :selected="$cancha?->id" />
                 </div>
             </div>
 

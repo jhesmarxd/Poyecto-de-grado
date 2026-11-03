@@ -16,6 +16,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
+use Illuminate\Validation\ValidationException;
 
 class ReservaController extends Controller
 {
@@ -57,12 +58,36 @@ class ReservaController extends Controller
      * fecha y horario, y el balón elegido no puede estar ya reservado
      * en ese mismo día/hora (los balones son compartidos por todo el recinto).
      */
-    public function store(StoreReservaRequest $request): RedirectResponse
+    public function store(StoreReservaRequest $request): RedirectResponse|JsonResponse
     {
+        if (! $request->user()->tieneCelularValido()) {
+            throw ValidationException::withMessages([
+                'telefono' => 'Registra un número de celular válido antes de confirmar la reserva.',
+            ]);
+        }
+
         $reserva = $this->reservaService->crearReserva($request->user(), $request->validated());
+
+        if ($request->expectsJson()) {
+            return response()->json(['redirect' => route('reservas.mis'), 'reserva_id' => $reserva->id]);
+        }
 
         return redirect()->route('reservas.mis')
             ->with('status', "Reserva #{$reserva->id} registrada correctamente.");
+    }
+
+    public function guardarCelular(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'telefono' => ['required', 'regex:'.User::CELULAR_REGEX],
+        ], [
+            'telefono.required' => 'Ingresa tu número de celular.',
+            'telefono.regex' => 'Ingresa un celular boliviano válido de 8 dígitos, con 6 o 7 inicial. Puedes usar +591.',
+        ]);
+
+        $request->user()->update(['telefono' => $data['telefono']]);
+
+        return response()->json(['telefono' => $request->user()->telefono]);
     }
 
     /**
@@ -80,9 +105,11 @@ class ReservaController extends Controller
 
         $vista = $request->string('vista')->toString();
         $vista = $vista === 'listado' ? 'listado' : 'calendario';
-        $reservas = $this->reservaService->reservasDelUsuario($request->user());
+        $reservas = $vista === 'listado'
+            ? $this->reservaService->reservasDelUsuario($request->user())
+            : collect();
         $ahoraServidor = Carbon::now((string) config('app.timezone', 'UTC'));
-        $proximaReserva = $this->reservaService->proximaReservaConfirmada(
+        $proximaReserva = $this->reservaService->proximaReservaDelCliente(
             $request->user(),
             $ahoraServidor
         );

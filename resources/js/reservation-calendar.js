@@ -64,7 +64,6 @@ function detailContent(role, props) {
 }
 
 export function calendarViewForViewport(role, width) {
-    if (role === 'cliente') return 'dayGridMonth';
     return width <= MOBILE_BREAKPOINT ? 'listWeek' : 'dayGridMonth';
 }
 
@@ -96,7 +95,7 @@ function initCalendar(root) {
         navLinks: true,
         dayMaxEvents: true,
         eventDisplay: 'block',
-        displayEventTime: role === 'cliente',
+        displayEventTime: false,
         eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
         slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
         headerToolbar: {

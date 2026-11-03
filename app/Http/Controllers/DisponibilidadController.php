@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cancha;
 use App\Services\DisponibilidadService;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class DisponibilidadController extends Controller
@@ -17,7 +18,7 @@ class DisponibilidadController extends Controller
      * Consulta de disponibilidad: elige una cancha y una fecha
      * y muestra las franjas horarias libres.
      */
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         $canchas = $this->disponibilidadService->canchasDisponibles();
 
@@ -25,6 +26,18 @@ class DisponibilidadController extends Controller
         $fecha = $request->input('fecha');
 
         $cancha = $canchas->firstWhere('id', $canchaId);
+        if ($request->boolean('consultar') && ! $request->user() && $cancha
+            && $this->disponibilidadService->esFechaValida($fecha)
+            && $fecha >= now()->toDateString()) {
+            $request->session()->put('url.intended', route('disponibilidad.index', [
+                'cancha_id' => $cancha->id,
+                'fecha' => $fecha,
+            ]));
+            $request->session()->put('reserva_pendiente', $cancha->nombre);
+
+            return redirect()->route('login');
+        }
+
         $horariosLibres = $cancha && $fecha
             ? $this->disponibilidadService->horariosLibres($cancha, $fecha)
             : collect();

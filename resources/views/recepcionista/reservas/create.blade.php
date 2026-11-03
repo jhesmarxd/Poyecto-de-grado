@@ -32,15 +32,8 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="cancha_id" class="form-label">Cancha</label>
-                    <select name="cancha_id" id="cancha_id" class="form-select" required>
-                        <option value="">Seleccionar cancha...</option>
-                        @foreach ($canchas as $cancha)
-                            <option value="{{ $cancha->id }}" {{ old('cancha_id') == $cancha->id ? 'selected' : '' }}>
-                                {{ $cancha->nombre }} - Bs. {{ number_format($cancha->precio_por_hora, 2) }}/hora
-                            </option>
-                        @endforeach
-                    </select>
+                    <span class="form-label d-block">Cancha</span>
+                    <x-cancha-picker :canchas="$canchas" :selected="old('cancha_id')" placeholder="Seleccionar cancha..." />
                     @error('cancha_id') <div class="text-danger">{{ $message }}</div> @enderror
                 </div>
 
@@ -90,7 +83,7 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const cancha = document.getElementById('cancha_id');
+    const cancha = document.querySelector('[data-cancha-picker]');
     const fecha = document.getElementById('fecha');
     const horario = document.getElementById('horario_id');
     const ayuda = document.getElementById('horario-ayuda');
@@ -101,13 +94,14 @@ document.addEventListener('DOMContentLoaded', function () {
         horario.disabled = true;
         horario.innerHTML = '<option value="">Consultando disponibilidad...</option>';
 
-        if (!cancha.value || !fecha.value) {
+        const canchaId = cancha.querySelector('input[name="cancha_id"]:checked')?.value;
+        if (!canchaId || !fecha.value) {
             horario.innerHTML = '<option value="">Selecciona primero cancha y fecha</option>';
             ayuda.textContent = 'Se mostrarán únicamente las franjas disponibles.';
             return;
         }
 
-        const parametros = new URLSearchParams({ cancha_id: cancha.value, fecha: fecha.value });
+        const parametros = new URLSearchParams({ cancha_id: canchaId, fecha: fecha.value });
 
         try {
             const respuesta = await fetch(endpoint + '?' + parametros.toString(), {

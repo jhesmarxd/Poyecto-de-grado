@@ -156,16 +156,7 @@ Gemini únicamente propone intención y entidades. El backend valida el JSON, re
 
 Antes de llamar al proveedor, una política local bloquea solicitudes de credenciales, secretos, variables internas, SQL, datos privados de terceros, escalamiento de privilegios y manipulación del prompt. El contenido bloqueado se almacena redactado y nunca se envía a Gemini.
 
-### Llamada de voz
-
-Los clientes autenticados y activos ven un botón de teléfono en la cabecera de WallyBot. Al iniciar la llamada, el navegador solicita permiso para usar el micrófono, escucha una intervención, envía su transcripción al mismo chatbot y lee la respuesta antes de volver a escuchar.
-
-- Funciona principalmente en Chrome y Edge mediante las API de voz del navegador, sin claves adicionales.
-- Requiere HTTPS en producción; `localhost` también se considera un contexto seguro durante el desarrollo.
-- Laravel no recibe ni guarda grabaciones. Las transcripciones sí forman parte del historial normal del chatbot y el proveedor del navegador puede procesar el audio.
-- Para crear una reserva, el bot reúne cancha, fecha, horario y balón, muestra el total real y exige la frase explícita `sí, confirmar` antes de llamar al servicio de reservas.
-- El borrador vence después de 10 minutos. Si cambia la disponibilidad antes de confirmar, la operación se rechaza y se muestran alternativas actualizadas.
-- En navegadores incompatibles o si se deniega el micrófono, el chat escrito continúa funcionando normalmente.
+Para crear una reserva, el bot reúne cancha, fecha, horario y balón, muestra el total real y exige la frase explícita `sí, confirmar` antes de usar el servicio de reservas. El borrador vence después de 10 minutos. Si cambia la disponibilidad antes de confirmar, la operación se rechaza y se muestran alternativas actualizadas.
 
 ## Métricas del chatbot
 

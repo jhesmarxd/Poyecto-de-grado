@@ -23,6 +23,8 @@
                 'reserva' => $proximaReserva,
                 'ahoraServidor' => $ahoraServidor,
             ])
+        @else
+            <div class="card reservation-countdown-empty" role="status">No tienes próximas reservas</div>
         @endif
 
         <nav class="tabs pills client-view-tabs" aria-label="Vistas de mis reservas">

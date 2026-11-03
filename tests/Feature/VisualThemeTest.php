@@ -22,7 +22,7 @@ class VisualThemeTest extends TestCase
         $this->assertFileExists(public_path('img/generated/wally-team-chibi-v1.png'));
     }
 
-    public function test_google_es_la_ultima_opcion_del_login_y_no_aparece_en_registro(): void
+    public function test_google_aparece_en_login_y_registro_solo_cuando_esta_configurado(): void
     {
         config()->set('services.google', [
             'client_id' => 'client-id',
@@ -42,9 +42,15 @@ class VisualThemeTest extends TestCase
             ->assertOk()
             ->assertSee('auth-shell auth-shell--centered', false)
             ->assertDontSee('class="auth-aside"', false)
-            ->assertDontSee('Continuar con Google')
-            ->assertDontSee('Registrarse con Google')
-            ->assertDontSee(route('auth.google.redirect'), false);
+            ->assertSee('Continuar con Google')
+            ->assertSee(route('auth.google.redirect'), false);
+
+        config()->set('services.google.client_id', null);
+        config()->set('services.google.client_secret', null);
+
+        $this->get(route('register'))
+            ->assertOk()
+            ->assertDontSee('Continuar con Google');
     }
 
     public function test_la_agenda_y_el_calendario_integran_las_guias_visuales(): void

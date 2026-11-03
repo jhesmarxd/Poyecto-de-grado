@@ -75,72 +75,6 @@
         flex-shrink: 0;
     }
 
-    .chatbot-llamada {
-        width: 2.15rem;
-        height: 2.15rem;
-        display: grid;
-        place-items: center;
-        border: 1px solid rgba(255, 255, 255, 0.45);
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.14);
-        color: #fff;
-        font-size: 1rem;
-        transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-
-        &:hover,
-        &:focus-visible {
-            background: rgba(255, 255, 255, 0.25);
-            transform: scale(1.06);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.22);
-        }
-
-        &.is-active {
-            background: var(--danger, #dc3545);
-            border-color: rgba(255, 255, 255, 0.7);
-            animation: chatbot-call-pulse 1.6s ease-in-out infinite;
-        }
-
-        &.is-unavailable {
-            opacity: 0.62;
-        }
-    }
-
-    .chatbot-voz-estado {
-        min-height: 2.25rem;
-        padding: 0.48rem 0.85rem;
-        display: flex;
-        align-items: center;
-        gap: 0.55rem;
-        border-bottom: 1px solid var(--border);
-        background: var(--bg-card);
-        color: var(--t-muted);
-        font-size: 0.76rem;
-        font-weight: 600;
-
-        &.is-listening {
-            color: var(--success, #198754);
-        }
-
-        &.is-processing {
-            color: var(--primary);
-        }
-
-        &.is-speaking {
-            color: var(--warning-dark, #9a6700);
-        }
-    }
-
-    .chatbot-voz-pulso {
-        width: 0.58rem;
-        height: 0.58rem;
-        border-radius: 50%;
-        background: currentColor;
-        box-shadow: 0 0 0 0 currentColor;
-        animation: chatbot-voice-pulse 1.25s ease-out infinite;
-        flex-shrink: 0;
-    }
-
     .chatbot-mensajes {
         flex: 1;
         overflow-y: auto;
@@ -167,23 +101,6 @@
 body.is-dragging-chatbot {
     cursor: grabbing;
     user-select: none;
-}
-
-@keyframes chatbot-call-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.3); }
-    50% { box-shadow: 0 0 0 0.38rem rgba(220, 53, 69, 0); }
-}
-
-@keyframes chatbot-voice-pulse {
-    0% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
-    70%, 100% { box-shadow: 0 0 0 0.35rem transparent; opacity: 0.65; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .chatbot-llamada.is-active,
-    .chatbot-voz-pulso {
-        animation: none;
-    }
 }
 
 .chatbot-mensaje {

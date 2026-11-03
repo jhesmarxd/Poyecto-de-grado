@@ -34,6 +34,8 @@ import { initSequentialRowNumbers } from './table-numbering';
 import { initReservationCalendars } from './reservation-calendar';
 import { initReservationCountdowns } from './reservation-countdown';
 import { initCrudDialogs } from './crud-dialogs';
+import { initCanchaPickers } from './cancha-picker';
+import { initReservationCheckout } from './reservation-checkout';
 
 document.addEventListener('DOMContentLoaded', () => {
     initShellBehaviors();
@@ -41,4 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initReservationCalendars();
     initReservationCountdowns();
     initCrudDialogs();
+    initCanchaPickers();
+    initReservationCheckout();
 });

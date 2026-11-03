@@ -47,6 +47,29 @@
   min-width: 0;
 }
 
+.reservation-countdown__details { min-width: 0; }
+
+.reservation-countdown__court-image {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 72px;
+  flex: 0 0 96px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: var(--bg-muted);
+  color: var(--t-muted);
+  font-size: 26px;
+}
+
+.reservation-countdown__court-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
 .reservation-countdown__icon {
   display: grid;
   place-items: center;
@@ -119,6 +142,41 @@
   line-height: 1.15;
 }
 
+.reservation-countdown__units {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.reservation-countdown__unit {
+  display: grid;
+  justify-items: center;
+  min-width: 54px;
+}
+
+.reservation-countdown__unit[hidden] { display: none; }
+
+.reservation-countdown__unit small {
+  color: var(--t-muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.reservation-countdown-empty {
+  margin-bottom: 22px;
+  padding: 20px 22px;
+  color: var(--t-muted);
+}
+
+@media (max-width: 900px) and (min-width: 621px) {
+  .reservation-countdown { flex-wrap: wrap; gap: 16px; }
+  .reservation-countdown__court-image { width: 80px; height: 62px; flex-basis: 80px; }
+  .reservation-countdown__timer { width: 100%; justify-items: center; padding-top: 12px; border-top: 1px solid var(--border-soft); }
+  .reservation-countdown__units { justify-content: center; }
+}
+
 @media (max-width: 620px) {
   .reservation-countdown {
     align-items: stretch;
@@ -132,4 +190,23 @@
     padding-top: 14px;
     border-top: 1px solid var(--border-soft);
   }
+
+  .reservation-countdown__identity {
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .reservation-countdown__court-image {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    width: min(100%, 220px);
+    height: 100px;
+    justify-self: center;
+  }
+
+  .reservation-countdown__icon { grid-column: 1; grid-row: 2; }
+  .reservation-countdown__details { grid-column: 2; grid-row: 2; align-self: center; }
+
+  .reservation-countdown__units { justify-content: flex-start; }
 }

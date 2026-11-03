@@ -359,37 +359,57 @@ class ReservaService
     }
 
     /**
-     * Obtiene las reservas de un usuario con sus relaciones.
+     * Obtiene las reservas del listado desde hoy, en la zona horaria del sistema.
      */
     public function reservasDelUsuario(User $user)
     {
+        $ahora = Carbon::now((string) config('app.timezone', 'UTC'));
+
         return $user->reservas()
             ->with(['cancha', 'horario', 'balon', 'afectacionConfiguracion.cambio', 'googleCalendarEvent'])
-            ->orderByDesc('fecha')
-            ->orderByDesc('id')
-            ->get();
+            ->whereDate('fecha', '>=', $ahora->toDateString())
+            ->get()
+            ->sort(function (Reserva $primera, Reserva $segunda) use ($ahora): int {
+                $primeraFutura = $this->esProximaReservaDelCliente($primera, $ahora);
+                $segundaFutura = $this->esProximaReservaDelCliente($segunda, $ahora);
+
+                if ($primeraFutura !== $segundaFutura) {
+                    return $primeraFutura ? -1 : 1;
+                }
+
+                $porInicio = $primera->iniciaEn()->getTimestamp() <=> $segunda->iniciaEn()->getTimestamp();
+
+                return ($primeraFutura ? $porInicio : -$porInicio) ?: ($primera->id <=> $segunda->id);
+            })
+            ->values();
     }
 
     /**
-     * Obtiene la reserva confirmada vigente o futura más próxima del cliente.
+     * Obtiene la reserva pendiente o confirmada que aún no ha comenzado más próxima.
      */
-    public function proximaReservaConfirmada(User $user, ?Carbon $ahora = null): ?Reserva
+    public function proximaReservaDelCliente(User $user, ?Carbon $ahora = null): ?Reserva
     {
         $zonaHoraria = (string) config('app.timezone', 'UTC');
         $ahora = ($ahora ?? Carbon::now($zonaHoraria))->copy()->setTimezone($zonaHoraria);
 
         return $user->reservas()
             ->with(['cancha', 'horario'])
-            ->where('estado', Reserva::ESTADO_CONFIRMADA)
+            ->whereIn('estado', [Reserva::ESTADO_PENDIENTE, Reserva::ESTADO_CONFIRMADA])
             ->whereDate('fecha', '>=', $ahora->toDateString())
             ->get()
-            ->filter(fn (Reserva $reserva) => $reserva->finalizaEn()->greaterThan($ahora))
+            ->filter(fn (Reserva $reserva) => $this->esProximaReservaDelCliente($reserva, $ahora))
             ->sort(function (Reserva $primera, Reserva $segunda): int {
                 $porInicio = $primera->iniciaEn()->getTimestamp() <=> $segunda->iniciaEn()->getTimestamp();
 
                 return $porInicio !== 0 ? $porInicio : $primera->id <=> $segunda->id;
             })
             ->first();
+    }
+
+    private function esProximaReservaDelCliente(Reserva $reserva, Carbon $ahora): bool
+    {
+        return in_array($reserva->estado, [Reserva::ESTADO_PENDIENTE, Reserva::ESTADO_CONFIRMADA], true)
+            && $reserva->iniciaEn()->greaterThan($ahora);
     }
 
     /**

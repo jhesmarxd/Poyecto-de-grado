@@ -5,21 +5,12 @@ export function getReservationCountdownState(nowMs, startMs, endMs) {
         return null;
     }
 
-    if (nowMs >= endMs) {
-        return {
-            phase: 'finished',
-            status: 'Reserva finalizada',
-            caption: 'Tiempo cumplido',
-            remainingMs: 0,
-        };
-    }
-
     if (nowMs >= startMs) {
         return {
-            phase: 'active',
-            status: 'Reserva en curso',
-            caption: 'Finaliza en',
-            remainingMs: endMs - nowMs,
+            phase: 'finished',
+            status: 'Buscando la siguiente reserva',
+            caption: 'Actualizando',
+            remainingMs: 0,
         };
     }
 
@@ -33,7 +24,7 @@ export function getReservationCountdownState(nowMs, startMs, endMs) {
         return { phase: 'thirty', status: 'Comienza en menos de 30 minutos', caption: 'Comienza en', remainingMs };
     }
 
-    if (remainingMs <= 60 * MINUTE_MS) {
+    if (remainingMs < 60 * MINUTE_MS) {
         return { phase: 'hour', status: 'Comienza en menos de 1 hora', caption: 'Comienza en', remainingMs };
     }
 
@@ -41,17 +32,20 @@ export function getReservationCountdownState(nowMs, startMs, endMs) {
 }
 
 export function formatReservationCountdown(milliseconds) {
-    const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
-    const hours = Math.floor(totalSeconds / 3600);
+    const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
 
-    return [hours, minutes, seconds]
-        .map((part) => String(part).padStart(2, '0'))
-        .join(':');
+    return { days, hours, minutes, seconds, showSeconds: milliseconds < 60 * MINUTE_MS };
 }
 
+const initializedCountdowns = new WeakSet();
+
 function initializeCountdown(element) {
+    if (initializedCountdowns.has(element)) return;
+    initializedCountdowns.add(element);
     const startMs = Number(element.dataset.startAt);
     const endMs = Number(element.dataset.endAt);
     const serverNowMs = Number(element.dataset.serverNow);
@@ -63,9 +57,14 @@ function initializeCountdown(element) {
     const clockOffsetMs = serverNowMs - Date.now();
     const status = element.querySelector('[data-countdown-status]');
     const caption = element.querySelector('[data-countdown-caption]');
-    const value = element.querySelector('[data-countdown-value]');
+    const days = element.querySelector('[data-countdown-days]');
+    const hours = element.querySelector('[data-countdown-hours]');
+    const minutes = element.querySelector('[data-countdown-minutes]');
+    const seconds = element.querySelector('[data-countdown-seconds]');
+    const secondsUnit = element.querySelector('[data-countdown-seconds-unit]');
     const animation = element.querySelector('[data-countdown-animation]');
     let intervalId = null;
+    let reloading = false;
 
     const render = () => {
         const state = getReservationCountdownState(Date.now() + clockOffsetMs, startMs, endMs);
@@ -77,7 +76,12 @@ function initializeCountdown(element) {
         element.dataset.phase = state.phase;
         status.textContent = state.status;
         caption.textContent = state.caption;
-        value.textContent = formatReservationCountdown(state.remainingMs);
+        const remaining = formatReservationCountdown(state.remainingMs);
+        days.textContent = String(remaining.days).padStart(2, '0');
+        hours.textContent = String(remaining.hours).padStart(2, '0');
+        minutes.textContent = String(remaining.minutes).padStart(2, '0');
+        seconds.textContent = String(remaining.seconds).padStart(2, '0');
+        secondsUnit.hidden = !remaining.showSeconds;
         if (animation) {
             animation.src = state.phase === 'active'
                 ? animation.dataset.activeSrc
@@ -87,6 +91,10 @@ function initializeCountdown(element) {
         if (state.phase === 'finished' && intervalId !== null) {
             window.clearInterval(intervalId);
             intervalId = null;
+        }
+        if (state.phase === 'finished' && !reloading) {
+            reloading = true;
+            window.location.reload();
         }
 
         return state.phase;

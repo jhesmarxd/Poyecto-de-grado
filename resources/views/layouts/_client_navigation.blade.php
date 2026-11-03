@@ -23,7 +23,7 @@
     </a>
     <button type="button" class="nav-link client-assistant-trigger" data-chatbot-open
             data-nav-label="Abrir asistente" aria-controls="chatbot-ventana" aria-expanded="false">
-        <i class="bi bi-headset" aria-hidden="true"></i>
+        <i class="bi bi-chat-dots-fill" aria-hidden="true"></i>
         <span><strong>Asistente</strong><small>Recibe ayuda paso a paso</small></span>
     </button>
 </nav>

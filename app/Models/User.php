@@ -19,6 +19,7 @@ class User extends Authenticatable
     public const ROL_CLIENTE = 'cliente';
 
     public const ROL_RECEPCIONISTA = 'recepcionista';
+    public const CELULAR_REGEX = '/^(?:\+591)?[67][0-9]{7}$/';
 
     public const ROLES = [
         self::ROL_CLIENTE => 'Cliente',
@@ -115,6 +116,11 @@ class User extends Authenticatable
     public function tienePasswordLocal(): bool
     {
         return filled($this->password);
+    }
+
+    public function tieneCelularValido(): bool
+    {
+        return is_string($this->telefono) && preg_match(self::CELULAR_REGEX, $this->telefono) === 1;
     }
 
     /**
