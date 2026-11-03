@@ -9,16 +9,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (DB::getDriverName() === 'mysql') {
-            DB::statement("ALTER TABLE reservas MODIFY estado ENUM('pendiente','confirmada','cancelada','completada','afectada_por_configuracion','cancelada_por_complejo','reprogramada') NOT NULL DEFAULT 'pendiente'");
+        if (Schema::hasIndex('reservas', 'reservas_sin_duplicados')) {
+            Schema::table('reservas', function (Blueprint $table) {
+                $table->dropUnique('reservas_sin_duplicados');
+            });
         }
 
-        Schema::table('reservas', function (Blueprint $table) {
-            $table->dropUnique('reservas_sin_duplicados');
-        });
-
         if (DB::getDriverName() === 'mysql') {
-            DB::statement('ALTER TABLE reservas DROP COLUMN activa');
+            if (Schema::hasColumn('reservas', 'activa')) {
+                DB::statement('ALTER TABLE reservas DROP COLUMN activa');
+            }
+            $estado = DB::selectOne("SHOW COLUMNS FROM reservas LIKE 'estado'");
+            if (! str_contains((string) ($estado->Type ?? ''), "'reprogramada'")) {
+                DB::statement("ALTER TABLE reservas MODIFY estado ENUM('pendiente','confirmada','cancelada','completada','afectada_por_configuracion','cancelada_por_complejo','reprogramada') NOT NULL DEFAULT 'pendiente'");
+            }
             DB::statement("ALTER TABLE reservas ADD activa TINYINT GENERATED ALWAYS AS (CASE WHEN estado IN ('cancelada','cancelada_por_complejo','reprogramada') THEN NULL ELSE 1 END) STORED");
             Schema::table('reservas', function (Blueprint $table) {
                 $table->unique(['cancha_id', 'fecha', 'horario_id', 'activa'], 'reservas_sin_duplicados');
