@@ -30,7 +30,9 @@ class UpdateUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $usuario->id],
             'telefono' => ['nullable', 'string', 'max:20'],
-            'rol' => ['required', Rule::in(array_keys(User::ROLES))],
+            'rol' => ['required', Rule::in($usuario->esAdministrador()
+                ? [User::ROL_ADMIN]
+                : [User::ROL_CLIENTE, User::ROL_RECEPCIONISTA])],
             'password' => ['nullable', 'confirmed', Password::min(8)],
             'estado' => ['sometimes', 'boolean'],
         ];

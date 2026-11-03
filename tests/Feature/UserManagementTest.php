@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -40,13 +41,13 @@ class UserManagementTest extends TestCase
         $this->get('/admin/usuarios')->assertRedirect('/login');
     }
 
-    public function test_un_admin_puede_crear_un_usuario(): void
+    public function test_un_admin_puede_crear_un_cliente(): void
     {
         $response = $this->actingAs($this->admin())->post('/admin/usuarios', [
             'name' => 'Nuevo Empleado',
             'email' => 'empleado@wally.com',
             'telefono' => '71234570',
-            'rol' => 'admin',
+            'rol' => User::ROL_CLIENTE,
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
         ]);
@@ -54,8 +55,50 @@ class UserManagementTest extends TestCase
         $response->assertRedirect('/admin/usuarios');
         $this->assertDatabaseHas('users', [
             'email' => 'empleado@wally.com',
-            'rol' => 'admin',
+            'rol' => User::ROL_CLIENTE,
         ]);
+    }
+
+    public function test_el_formulario_y_la_validacion_no_permiten_crear_otro_admin(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->get('/admin/usuarios/crear')
+            ->assertOk()
+            ->assertDontSee('<option value="admin"', false);
+
+        $this->post('/admin/usuarios', [
+            'name' => 'Otro Administrador',
+            'email' => 'otro-admin@wally.com',
+            'rol' => User::ROL_ADMIN,
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ])->assertSessionHasErrors('rol');
+
+        $this->assertDatabaseMissing('users', ['email' => 'otro-admin@wally.com']);
+    }
+
+    public function test_no_puede_promover_otro_usuario_a_admin(): void
+    {
+        $admin = $this->admin();
+        $usuario = $this->cliente();
+
+        $this->actingAs($admin)->put("/admin/usuarios/{$usuario->id}", [
+            'name' => $usuario->name,
+            'email' => $usuario->email,
+            'rol' => User::ROL_ADMIN,
+            'estado' => '1',
+        ])->assertSessionHasErrors('rol');
+
+        $this->assertDatabaseHas('users', ['id' => $usuario->id, 'rol' => User::ROL_CLIENTE]);
+    }
+
+    public function test_la_base_de_datos_impide_un_segundo_admin(): void
+    {
+        $this->admin();
+
+        $this->expectException(QueryException::class);
+        $this->admin();
     }
 
     public function test_un_admin_puede_editar_un_usuario(): void

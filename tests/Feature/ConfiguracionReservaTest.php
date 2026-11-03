@@ -197,14 +197,13 @@ class ConfiguracionReservaTest extends TestCase
     {
         $fecha = $this->fechaAbierta(3);
         [$cancha, $horario] = $this->canchaConFranja($fecha);
+        $administrador = $this->admin();
         $reserva = Reserva::factory()->confirmada()->create([
-            'user_id' => $this->admin()->id,
+            'user_id' => $administrador->id,
             'cancha_id' => $cancha->id,
             'horario_id' => $horario->id,
             'fecha' => $fecha,
         ]);
-        $administrador = $this->admin();
-
         $this->actingAs($administrador)->post(route('admin.configuracion-reservas.exceptions.preview'), [
             'cancha_id' => $cancha->id,
             'fecha' => $fecha,

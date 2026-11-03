@@ -7,7 +7,7 @@
         <div class="hero-text">
             <span class="eyebrow">Usuarios · Crear</span>
             <h1 class="hero-title">Nuevo <span class="accent">usuario</span></h1>
-            <p class="hero-sub">Crea una cuenta para un cliente o administrador del sistema.</p>
+            <p class="hero-sub">Crea una cuenta para un cliente o recepcionista del sistema.</p>
         </div>
     </div>
 
@@ -52,7 +52,6 @@
                         <label for="rol" class="field-label">Rol</label>
                         <select id="rol" name="rol" class="form-select @error('rol') is-invalid @enderror" required>
                             <option value="cliente" @selected(old('rol') === 'cliente')>Cliente</option>
-                            <option value="admin" @selected(old('rol') === 'admin')>Administrador</option>
                             <option value='recepcionista' @selected(old('rol') === 'recepcionista')>Recepcionista</option>
                         </select>
                         @error('rol')

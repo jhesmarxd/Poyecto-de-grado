@@ -52,9 +52,12 @@
                     <div class="field">
                         <label for="rol" class="field-label">Rol</label>
                         <select id="rol" name="rol" class="form-select @error('rol') is-invalid @enderror" required>
-                            <option value="cliente" @selected(old('rol', $usuario->rol) === 'cliente')>Cliente</option>
-                            <option value="admin" @selected(old('rol', $usuario->rol) === 'admin')>Administrador</option>
-                            <option value='recepcionista' @selected(old('rol', $usuario->rol) === 'recepcionista')>Recepcionista</option>
+                            @if ($usuario->esAdministrador())
+                                <option value="admin">Administrador</option>
+                            @else
+                                <option value="cliente" @selected(old('rol', $usuario->rol) === 'cliente')>Cliente</option>
+                                <option value="recepcionista" @selected(old('rol', $usuario->rol) === 'recepcionista')>Recepcionista</option>
+                            @endif
                         </select>
                         @error('rol')
                             <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
