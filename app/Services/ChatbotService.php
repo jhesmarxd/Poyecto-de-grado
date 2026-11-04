@@ -1149,7 +1149,10 @@ class ChatbotService
                     $componentes[] = $this->componenteHorarios($canchaHorario, (string) $fecha);
                 }
             } elseif (! empty($borrador['hora']) && empty($borrador['hora_fin'])) {
-                $componentes[] = $this->componenteDuraciones();
+                $canchaDuracion = Cancha::find($borrador['cancha_id']);
+                if ($canchaDuracion && $fecha) {
+                    $componentes[] = $this->componenteDuraciones($canchaDuracion, (string) $fecha, (string) $borrador['hora']);
+                }
             } elseif (! array_key_exists('balon_elegido', $borrador) && ! empty($borrador['horario_id'])) {
                 $horario = Horario::find($borrador['horario_id']);
                 if ($horario) {
@@ -1264,15 +1267,22 @@ class ChatbotService
         return ['tipo' => 'opciones', 'entidad' => 'horario', 'items' => $items];
     }
 
-    private function componenteDuraciones(): array
+    private function componenteDuraciones(Cancha $cancha, string $fecha, string $horaInicio): array
     {
         $items = collect($this->politicaReservas->configuracion()->duraciones_permitidas ?: [60, 90, 120, 150, 180])
-            ->map(fn ($minutos) => [
-                'titulo' => $minutos.' minutos',
-                'descripcion' => number_format($minutos / 60, 1).' horas',
-                'estado' => 'Elegir',
-                'mensaje' => 'por '.$minutos.' minutos',
-            ])->all();
+            ->map(function ($minutos) use ($cancha, $fecha, $horaInicio): array {
+                $horaFin = Carbon::parse($horaInicio)->addMinutes((int) $minutos)->format('H:i:s');
+                $disponible = $this->politicaReservas->validarRangoOperativo($cancha, $fecha, $horaInicio, $horaFin)->disponible()
+                    && $this->politicaReservas->rangoLibre($cancha, $fecha, $horaInicio, $horaFin);
+
+                return [
+                    'titulo' => $minutos.' minutos',
+                    'descripcion' => number_format($minutos / 60, 1).' horas',
+                    'estado' => $disponible ? 'Disponible' : 'No disponible',
+                    'disabled' => ! $disponible,
+                    'mensaje' => 'por '.$minutos.' minutos',
+                ];
+            })->all();
 
         return ['tipo' => 'opciones', 'entidad' => 'duracion', 'items' => $items];
     }

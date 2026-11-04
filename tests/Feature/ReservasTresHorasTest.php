@@ -65,7 +65,7 @@ class ReservasTresHorasTest extends TestCase
     {
         Carbon::setTestNow(Carbon::create(2026, 11, 4, 14, 15, 0, 'America/La_Paz'));
         [$cancha, $otra] = $this->catalogo();
-        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567']);
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
         $balon = Balon::where('tipo', Balon::TIPO_PREMIUM)->firstOrFail();
         $inicio = $cancha->horarios()->where('dia_semana', 4)->where('hora_inicio', '15:00:00')->firstOrFail();
 
@@ -92,7 +92,7 @@ class ReservasTresHorasTest extends TestCase
         Carbon::setTestNow(Carbon::create(2026, 11, 4, 14, 15, 0, 'America/La_Paz'));
         [$cancha] = $this->catalogo();
         $inicio = $cancha->horarios()->where('dia_semana', 3)->where('hora_inicio', '14:30:00')->firstOrFail();
-        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567']);
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
 
         $this->actingAs($cliente)->post('/reservas', [
             'cancha_id' => $cancha->id, 'horario_id' => $inicio->id,
@@ -107,12 +107,48 @@ class ReservasTresHorasTest extends TestCase
         [$cancha] = $this->catalogo();
         $cancha->horarios()->where('dia_semana', 4)->where('hora_inicio', '16:00:00')->update(['disponible' => false]);
         $inicio = $cancha->horarios()->where('dia_semana', 4)->where('hora_inicio', '15:00:00')->firstOrFail();
-        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567']);
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
 
         $this->actingAs($cliente)->post('/reservas', [
             'cancha_id' => $cancha->id, 'horario_id' => $inicio->id,
             'fecha' => '2026-11-05', 'hora_fin' => '17:00',
         ])->assertStatus(422);
         $this->assertDatabaseCount('reservas', 0);
+    }
+
+    public function test_chatbot_ofrece_horarios_y_duracion_de_tres_horas(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 11, 4, 14, 15, 0, 'America/La_Paz'));
+        $this->catalogo();
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
+        $this->actingAs($cliente);
+
+        $primera = $this->postJson('/chatbot/mensaje', ['mensaje' => 'quiero reservar Cancha 1 mañana']);
+        $primera->assertOk()->assertJsonPath('componentes.0.entidad', 'horario');
+        $this->postJson('/chatbot/mensaje', ['mensaje' => 'a las 15:00'])
+            ->assertOk()->assertJsonPath('componentes.0.entidad', 'duracion');
+        $this->postJson('/chatbot/mensaje', ['mensaje' => 'por 180 minutos'])
+            ->assertOk()->assertJsonPath('componentes.0.entidad', 'balon');
+        $this->postJson('/chatbot/mensaje', ['mensaje' => 'traigo mi balón'])
+            ->assertOk()->assertJsonPath('componentes.0.tipo', 'acciones');
+        $this->postJson('/chatbot/mensaje', ['mensaje' => 'sí, confirmar'])
+            ->assertOk()->assertJsonPath('respuesta', fn ($texto) => str_contains($texto, 'confirmada correctamente'));
+        $this->assertDatabaseHas('reservas', ['user_id' => $cliente->id, 'duracion_minutos' => 180, 'estado' => Reserva::ESTADO_CONFIRMADA]);
+    }
+
+    public function test_chatbot_desactiva_duraciones_que_salen_del_horario_de_atencion(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 11, 4, 14, 15, 0, 'America/La_Paz'));
+        $this->catalogo();
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
+        $this->actingAs($cliente);
+
+        $this->postJson('/chatbot/mensaje', ['mensaje' => 'quiero reservar Cancha 1 mañana'])->assertOk();
+        $this->postJson('/chatbot/mensaje', ['mensaje' => 'a las 21:00'])
+            ->assertOk()
+            ->assertJsonPath('componentes.0.entidad', 'duracion')
+            ->assertJsonPath('componentes.0.items.0.estado', 'Disponible')
+            ->assertJsonPath('componentes.0.items.1.estado', 'No disponible')
+            ->assertJsonPath('componentes.0.items.1.disabled', true);
     }
 }
