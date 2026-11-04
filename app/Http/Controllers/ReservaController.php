@@ -11,6 +11,7 @@ use App\Models\Reserva;
 use App\Models\User;
 use App\Services\ReservaCalendarService;
 use App\Services\ReservaService;
+use App\Services\PoliticaReservasService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,14 +38,25 @@ class ReservaController extends Controller
 
         abort_if(! $this->reservaService->esFechaValida($fecha), 404);
 
+        $horaFin = $request->input('hora_fin', $horario->hora_fin);
+        abort_unless(preg_match('/^\d{2}:\d{2}(?::\d{2})?$/', (string) $horaFin), 422);
+        $horaFin = Carbon::parse($horaFin)->format('H:i:s');
+        $politica = app(PoliticaReservasService::class);
+        abort_unless($politica->validarRangoOperativo($cancha, $fecha, $horario->hora_inicio, $horaFin)->disponible()
+            && $politica->rangoLibre($cancha, $fecha, $horario->hora_inicio, $horaFin), 409, 'El bloque elegido ya no está disponible.');
+        $duracionMinutos = (int) Carbon::parse($horario->hora_inicio)->diffInMinutes(Carbon::parse($horaFin));
+        abort_unless(in_array($duracionMinutos, array_map('intval', $politica->configuracion()->duraciones_permitidas ?: []), true), 422);
+
         $balones = Balon::orderBy('tipo')->orderBy('marca')->orderBy('nombre')->get();
         $balonPremium = Balon::premium();
 
-        $balonesOcupados = $this->reservaService->balonesOcupados($fecha, $horario);
+        $balonesOcupados = $this->reservaService->balonesOcupados($fecha, $horario, $horaFin);
 
         return view('reservas.crear', compact(
             'cancha',
             'horario',
+            'horaFin',
+            'duracionMinutos',
             'fecha',
             'balones',
             'balonesOcupados',

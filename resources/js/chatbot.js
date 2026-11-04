@@ -168,6 +168,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     const botonOpcion = document.createElement('button');
                     botonOpcion.type = 'button';
                     botonOpcion.className = 'chatbot-opcion';
+                    botonOpcion.disabled = Boolean(item.disabled);
+                    botonOpcion.classList.toggle('is-unavailable', Boolean(item.disabled));
 
                     if (item.imagen) {
                         const imagen = document.createElement('img');
@@ -207,6 +209,52 @@ document.addEventListener('DOMContentLoaded', function () {
                     acciones.appendChild(botonAccion);
                 });
                 mensajes.appendChild(acciones);
+            }
+
+            if (componente.tipo === 'contacto') {
+                const form = document.createElement('form');
+                form.className = 'chatbot-contacto';
+                const label = document.createElement('label');
+                label.textContent = 'Celular para la reserva';
+                const input = document.createElement('input');
+                input.type = 'tel';
+                input.required = true;
+                input.inputMode = 'tel';
+                input.autocomplete = 'tel';
+                input.placeholder = '7XXXXXXX';
+                const save = document.createElement('button');
+                save.type = 'submit';
+                save.textContent = 'Guardar celular';
+                form.append(label, input, save);
+                form.addEventListener('submit', async event => {
+                    event.preventDefault();
+                    const phone = input.value.trim();
+                    if (!/^(?:\+591)?[67][0-9]{7}$/.test(phone)) {
+                        input.setCustomValidity('Ingresa 8 dígitos que comiencen con 6 o 7.');
+                        input.reportValidity();
+                        return;
+                    }
+                    input.setCustomValidity('');
+                    save.disabled = true;
+                    try {
+                        const response = await fetch(widget.dataset.phoneUrl, {
+                            method: 'POST', credentials: 'same-origin',
+                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': formulario.querySelector('input[name="_token"]').value },
+                            body: new URLSearchParams({ telefono: phone }),
+                        });
+                        if (!response.ok) throw new Error('No se pudo guardar el celular.');
+                        form.remove();
+                        agregarMensaje('Celular guardado en tu perfil. Revisa el resumen y confirma la reserva.', 'bot');
+                        agregarComponentes([{ tipo: 'acciones', acciones: [
+                            { etiqueta: 'Sí, confirmar reserva', mensaje: 'sí, confirmar', estilo: 'primary' },
+                            { etiqueta: 'No, cancelar', mensaje: 'no', estilo: 'secondary' },
+                        ] }]);
+                    } catch (error) {
+                        agregarMensaje(error.message, 'bot');
+                        save.disabled = false;
+                    }
+                });
+                mensajes.appendChild(form);
             }
 
             if (componente.tipo === 'enlace' && componente.url) {

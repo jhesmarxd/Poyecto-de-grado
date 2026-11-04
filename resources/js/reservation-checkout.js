@@ -90,6 +90,9 @@ export function initReservationCheckout(root = document) {
         button.disabled = true;
 
         try {
+            if (!form.dataset.customer?.trim() || !form.dataset.email?.trim()) {
+                throw new Error('Completa tu nombre y correo en tu perfil antes de reservar.');
+            }
             if (!phonePattern.test(form.dataset.phone || '') && !await requestPhone()) return;
 
             const confirmation = await window.Swal.fire({

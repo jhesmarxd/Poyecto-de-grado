@@ -38,7 +38,7 @@ class RecepcionistaTest extends TestCase
 
     private function cliente(): User
     {
-        return User::factory()->create(['rol' => User::ROL_CLIENTE]);
+        return User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567']);
     }
 
     private function canchaConHorario(string $fecha): array
@@ -101,7 +101,7 @@ class RecepcionistaTest extends TestCase
             ->get('/recepcionista/reservas/hoy')
             ->assertOk()
             ->assertSee($cancha->nombre)
-            ->assertSee('Confirmar');
+            ->assertDontSee('Por confirmar');
     }
 
     public function test_el_recepcionista_puede_crear_reserva_presencial(): void
@@ -123,7 +123,7 @@ class RecepcionistaTest extends TestCase
             'user_id' => $cliente->id,
             'cancha_id' => $cancha->id,
             'horario_id' => $horario->id,
-            'estado' => Reserva::ESTADO_PENDIENTE,
+            'estado' => Reserva::ESTADO_CONFIRMADA,
         ]);
     }
 

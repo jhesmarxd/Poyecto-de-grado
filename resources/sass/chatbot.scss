@@ -184,6 +184,12 @@ body.is-dragging-chatbot {
     }
 }
 
+.chatbot-opcion.is-unavailable { border-color: #b55252; background: #fff0f0; opacity: .55; cursor: not-allowed; }
+.chatbot-opcion.is-unavailable .chatbot-opcion-estado { color: #a02424; background: #fde1e1; }
+.chatbot-contacto { display: grid; gap: .5rem; padding: .7rem; border: 1px solid var(--border); border-radius: 12px; }
+.chatbot-contacto input { min-width: 0; padding: .5rem; border: 1px solid var(--border); border-radius: 8px; }
+.chatbot-contacto button { padding: .5rem; border: 0; border-radius: 8px; background: var(--primary); color: white; }
+
 .chatbot-opciones--balon .chatbot-opcion > img {
     object-fit: contain;
     padding: 0.35rem;

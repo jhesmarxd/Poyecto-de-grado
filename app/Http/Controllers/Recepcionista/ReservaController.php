@@ -68,7 +68,6 @@ class ReservaController extends Controller
 
         $resumen = [
             'total' => $reservas->count(),
-            'pendientes' => $reservas->where('estado', Reserva::ESTADO_PENDIENTE)->count(),
             'por_ingresar' => $reservas->where('estado', Reserva::ESTADO_CONFIRMADA)
                 ->whereNull('check_in_at')->count(),
             'en_curso' => $reservas->filter(fn (Reserva $reserva) => $reserva->estaEnCurso())->count(),

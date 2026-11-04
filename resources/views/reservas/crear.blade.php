@@ -25,7 +25,8 @@
                 <dl class="booking-summary__list">
                     <div><dt><i class="bi bi-grid-3x2" aria-hidden="true"></i> Cancha</dt><dd>{{ $cancha->nombre }}</dd></div>
                     <div><dt><i class="bi bi-calendar3" aria-hidden="true"></i> Fecha</dt><dd>{{ \Carbon\Carbon::parse($fecha)->translatedFormat('l d \d\e F \d\e Y') }}</dd></div>
-                    <div><dt><i class="bi bi-clock" aria-hidden="true"></i> Horario</dt><dd>{{ \Carbon\Carbon::parse($horario->hora_inicio)->format('H:i') }} – {{ \Carbon\Carbon::parse($horario->hora_fin)->format('H:i') }}</dd></div>
+                    <div><dt><i class="bi bi-clock" aria-hidden="true"></i> Horario</dt><dd>{{ substr($horario->hora_inicio, 0, 5) }} – {{ substr($horaFin, 0, 5) }}</dd></div>
+                    <div><dt>Duración</dt><dd>{{ $duracionMinutos }} minutos</dd></div>
                     <div><dt><i class="bi bi-cash-coin" aria-hidden="true"></i> Precio base</dt><dd>Bs. {{ number_format($cancha->precio_por_hora, 2) }} / hora</dd></div>
                 </dl>
                 <p class="booking-summary__note"><i class="bi bi-info-circle" aria-hidden="true"></i> El total puede cambiar según el balón que elijas.</p>
@@ -37,16 +38,17 @@
                       data-phone="{{ auth()->user()->telefono }}"
                       data-customer="{{ auth()->user()->name }}" data-email="{{ auth()->user()->email }}"
                       data-court="{{ $cancha->nombre }}"
-                      data-features="{{ collect([$cancha->descripcion, $cancha->tipo_piso, $cancha->tipo_recinto])->filter()->unique()->implode(' · ') }}"
+                      data-features="{{ collect([$cancha->descripcion, $cancha->color_malla ? 'Malla '.$cancha->color_malla : null, $cancha->altura_malla ? 'Altura '.$cancha->altura_malla : null, $cancha->tipo_piso, $cancha->tipo_recinto])->filter()->unique()->implode(' · ') }}"
                       data-date="{{ \Carbon\Carbon::parse($fecha)->translatedFormat('l d \d\e F \d\e Y') }}"
                       data-start="{{ \Carbon\Carbon::parse($horario->hora_inicio)->format('H:i') }}"
-                      data-end="{{ \Carbon\Carbon::parse($horario->hora_fin)->format('H:i') }}"
-                      data-duration="{{ (int) \Carbon\Carbon::parse($horario->hora_inicio)->diffInMinutes(\Carbon\Carbon::parse($horario->hora_fin)) }}"
+                      data-end="{{ substr($horaFin, 0, 5) }}"
+                      data-duration="{{ $duracionMinutos }}"
                       data-list-url="{{ route('reservas.mis', ['vista' => 'listado']) }}">
                     <input type="hidden" data-availability-url value="{{ route('disponibilidad.index', ['cancha_id' => $cancha->id, 'fecha' => $fecha]) }}">
                     @csrf
                     <input type="hidden" name="cancha_id" value="{{ $cancha->id }}">
                     <input type="hidden" name="horario_id" value="{{ $horario->id }}">
+                    <input type="hidden" name="hora_fin" value="{{ substr($horaFin, 0, 5) }}">
                     <input type="hidden" name="fecha" value="{{ $fecha }}">
                     <input type="hidden" name="balon_id" id="balon_id" value="">
 
@@ -89,7 +91,7 @@
                         @enderror
 
                         <div class="booking-total" role="status" aria-live="polite">
-                            <span><i class="bi bi-wallet2" aria-hidden="true"></i> Total por hora</span>
+                            <span><i class="bi bi-wallet2" aria-hidden="true"></i> Total de la reserva</span>
                             <strong id="total-hora">Bs. {{ number_format($cancha->precio_por_hora, 2) }}</strong>
                         </div>
                     </div>
@@ -126,7 +128,7 @@
             if (!seleccionado) return;
             const precio = parseFloat(seleccionado.dataset.precio);
             balonId.value = seleccionado.value || '';
-            total.textContent = 'Bs. ' + precio.toFixed(2);
+            total.textContent = 'Bs. ' + (precio * {{ $duracionMinutos }} / 60).toFixed(2);
         }
 
         document.querySelectorAll('input[name="balon_seleccion"]').forEach(function (radio) {

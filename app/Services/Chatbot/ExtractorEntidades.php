@@ -304,10 +304,14 @@ class ExtractorEntidades
         if (preg_match('/\b(?:media hora|30 minutos)\b/', $texto)) {
             return 30;
         }
-        if (preg_match('/\b(una|1|dos|2)\s+horas?\b/', $texto, $partes)) {
-            return in_array($partes[1], ['dos', '2'], true) ? 120 : 60;
+        if (preg_match('/\b(una|1|dos|2|tres|3)\s+horas?\b/', $texto, $partes)) {
+            return match ($partes[1]) {
+                'tres', '3' => 180,
+                'dos', '2' => 120,
+                default => 60,
+            };
         }
-        if (preg_match('/\b(60|90|120)\s*minutos?\b/', $texto, $partes)) {
+        if (preg_match('/\b(60|90|120|150|180)\s*minutos?\b/', $texto, $partes)) {
             return (int) $partes[1];
         }
 

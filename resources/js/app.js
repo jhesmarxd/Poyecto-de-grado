@@ -36,6 +36,7 @@ import { initReservationCountdowns } from './reservation-countdown';
 import { initCrudDialogs } from './crud-dialogs';
 import { initCanchaPickers } from './cancha-picker';
 import { initReservationCheckout } from './reservation-checkout';
+import { initAvailabilitySelection } from './availability-selection';
 
 document.addEventListener('DOMContentLoaded', () => {
     initShellBehaviors();
@@ -45,4 +46,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initCrudDialogs();
     initCanchaPickers();
     initReservationCheckout();
+    initAvailabilitySelection();
 });

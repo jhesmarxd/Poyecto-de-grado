@@ -35,7 +35,7 @@ class ConfiguracionReserva extends Model
             'anticipacion_maxima_dias' => 14,
             'permitir_hoy' => true,
             'permitir_futuras' => true,
-            'duraciones_permitidas' => [60, 90, 120],
+            'duraciones_permitidas' => [60, 90, 120, 150, 180],
             'minutos_franja' => 30,
             'zona_horaria' => 'America/La_Paz',
         ]);

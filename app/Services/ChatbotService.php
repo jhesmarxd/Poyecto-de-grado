@@ -1137,12 +1137,19 @@ class ChatbotService
         $horaFin = $conversacion->contextoDe('hora_fin');
 
         if (is_array($borrador)) {
-            $fecha = $borrador['fecha'] ?? $fecha;
+            $fecha = $borrador['fecha'] ?? null;
             $horaInicio = $borrador['hora'] ?? $horaInicio;
             $horaFin = $borrador['hora_fin'] ?? $horaFin;
 
             if (empty($borrador['cancha_id'])) {
                 $componentes[] = $this->componenteCanchas($fecha, $horaInicio, $horaFin, true);
+            } elseif (empty($borrador['hora']) && ! empty($borrador['fecha'])) {
+                $canchaHorario = Cancha::find($borrador['cancha_id']);
+                if ($canchaHorario) {
+                    $componentes[] = $this->componenteHorarios($canchaHorario, (string) $fecha);
+                }
+            } elseif (! empty($borrador['hora']) && empty($borrador['hora_fin'])) {
+                $componentes[] = $this->componenteDuraciones();
             } elseif (! array_key_exists('balon_elegido', $borrador) && ! empty($borrador['horario_id'])) {
                 $horario = Horario::find($borrador['horario_id']);
                 if ($horario) {
@@ -1155,16 +1162,26 @@ class ChatbotService
             }
 
             if (($borrador['estado'] ?? null) === 'confirmacion') {
-                $componentes[] = [
+                if (auth()->check() && ! auth()->user()->tieneCelularValido()) {
+                    $componentes[] = ['tipo' => 'contacto'];
+                } else {
+                    $componentes[] = [
                     'tipo' => 'acciones',
                     'acciones' => [
                         ['etiqueta' => 'Sí, confirmar reserva', 'mensaje' => 'sí, confirmar', 'estilo' => 'primary'],
                         ['etiqueta' => 'No, cancelar', 'mensaje' => 'no', 'estilo' => 'secondary'],
                     ],
-                ];
+                    ];
+                }
             }
         } elseif ($intencion === DetectorIntencion::CONSULTAR_DISPONIBILIDAD) {
             $componentes[] = $this->componenteCanchas($fecha, $horaInicio, $horaFin, false);
+            if ($canchaId = $conversacion->contextoDe('cancha_id')) {
+                $canchaConsulta = Cancha::find($canchaId);
+                if ($canchaConsulta && $fecha) {
+                    $componentes[] = $this->componenteHorarios($canchaConsulta, (string) $fecha);
+                }
+            }
         }
 
         if (str_starts_with($respuesta, 'Reserva #')) {
@@ -1184,21 +1201,21 @@ class ChatbotService
     private function componenteCanchas(?string $fecha, ?string $horaInicio, ?string $horaFin, bool $paraReserva): array
     {
         $items = Cancha::disponibles()->orderBy('nombre')->get()
-            ->filter(function (Cancha $cancha) use ($fecha, $horaInicio, $horaFin): bool {
-                if (! $fecha || ! $horaInicio) {
-                    return true;
-                }
+            ->map(function (Cancha $cancha) use ($fecha, $horaInicio, $horaFin, $paraReserva): array {
+                $disponible = ! $fecha || ($horaInicio
+                    ? $this->canchaCubreRango($cancha, $fecha, $horaInicio, $horaFin)
+                    : $this->politicaReservas->horariosLibres($cancha, $fecha)->isNotEmpty());
 
-                return $this->canchaCubreRango($cancha, $fecha, $horaInicio, $horaFin);
-            })
-            ->map(fn (Cancha $cancha) => [
+                return [
                 'id' => $cancha->id,
                 'titulo' => $cancha->nombre,
-                'descripcion' => 'Bs. '.number_format((float) $cancha->precio_por_hora, 2).' por hora',
+                'descripcion' => collect([$cancha->descripcion, $cancha->color_malla ? 'Malla '.$cancha->color_malla : null, $cancha->altura_malla ? 'Altura '.$cancha->altura_malla : null, $cancha->tipo_piso ? 'Piso '.$cancha->tipo_piso : null, $cancha->tipo_recinto, 'Bs. '.number_format((float) $cancha->precio_por_hora, 2).' por hora'])->filter()->implode(' · '),
                 'imagen' => $cancha->imagenUrl(),
-                'estado' => 'Disponible',
+                'estado' => $disponible ? 'Disponible' : 'No disponible',
+                'disabled' => ! $disponible,
                 'mensaje' => ($paraReserva ? 'quiero reservar ' : 'disponibilidad de ').$cancha->nombre,
-            ])->values()->all();
+                ];
+            })->values()->all();
 
         return ['tipo' => 'opciones', 'entidad' => 'cancha', 'items' => $items];
     }
@@ -1210,14 +1227,14 @@ class ChatbotService
     {
         $ocupados = $this->reservaService->balonesOcupados($fecha, $horario, $horaFin);
         $items = Balon::query()
-            ->whereNotIn('id', $ocupados)
             ->orderBy('tipo')->orderBy('marca')->orderBy('nombre')->get()
             ->map(fn (Balon $balon) => [
                 'id' => $balon->id,
                 'titulo' => $balon->marcaModelo(),
                 'descripcion' => $balon->tipoLabel().' · Bs. '.number_format((float) $balon->precio_por_hora, 2).' por hora',
                 'imagen' => $balon->imagenUrl(),
-                'estado' => 'Disponible',
+                'estado' => in_array($balon->id, $ocupados, true) ? 'No disponible' : 'Disponible',
+                'disabled' => in_array($balon->id, $ocupados, true),
                 'mensaje' => $balon->marcaModelo(),
             ])->values()->all();
 
@@ -1231,6 +1248,33 @@ class ChatbotService
         ]);
 
         return ['tipo' => 'opciones', 'entidad' => 'balon', 'items' => $items];
+    }
+
+    private function componenteHorarios(Cancha $cancha, string $fecha): array
+    {
+        $items = $this->politicaReservas->franjasParaConsulta($cancha, $fecha)
+            ->map(fn (array $item) => [
+                'titulo' => substr($item['horario']->hora_inicio, 0, 5).'–'.substr($item['horario']->hora_fin, 0, 5),
+                'descripcion' => 'Franja de 30 minutos',
+                'estado' => $item['disponible'] ? 'Disponible' : 'No disponible',
+                'disabled' => ! $item['disponible'],
+                'mensaje' => 'a las '.substr($item['horario']->hora_inicio, 0, 5),
+            ])->all();
+
+        return ['tipo' => 'opciones', 'entidad' => 'horario', 'items' => $items];
+    }
+
+    private function componenteDuraciones(): array
+    {
+        $items = collect($this->politicaReservas->configuracion()->duraciones_permitidas ?: [60, 90, 120, 150, 180])
+            ->map(fn ($minutos) => [
+                'titulo' => $minutos.' minutos',
+                'descripcion' => number_format($minutos / 60, 1).' horas',
+                'estado' => 'Elegir',
+                'mensaje' => 'por '.$minutos.' minutos',
+            ])->all();
+
+        return ['tipo' => 'opciones', 'entidad' => 'duracion', 'items' => $items];
     }
 
     private function canchaCubreRango(Cancha $cancha, string $fecha, string $horaInicio, ?string $horaFin): bool

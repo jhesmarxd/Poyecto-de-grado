@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Cancha;
 use App\Services\DisponibilidadService;
+use App\Services\PoliticaReservasService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -11,7 +12,8 @@ use Illuminate\View\View;
 class DisponibilidadController extends Controller
 {
     public function __construct(
-        private readonly DisponibilidadService $disponibilidadService
+        private readonly DisponibilidadService $disponibilidadService,
+        private readonly PoliticaReservasService $politicaReservas
     ) {}
 
     /**
@@ -38,10 +40,11 @@ class DisponibilidadController extends Controller
             return redirect()->route('login');
         }
 
-        $horariosLibres = $cancha && $fecha
-            ? $this->disponibilidadService->horariosLibres($cancha, $fecha)
+        $franjas = $cancha && $fecha
+            ? $this->politicaReservas->franjasParaConsulta($cancha, $fecha)
             : collect();
+        $duraciones = array_map('intval', $this->politicaReservas->configuracion()->duraciones_permitidas ?: []);
 
-        return view('disponibilidad.index', compact('canchas', 'cancha', 'fecha', 'horariosLibres'));
+        return view('disponibilidad.index', compact('canchas', 'cancha', 'fecha', 'franjas', 'duraciones'));
     }
 }

@@ -8,7 +8,7 @@ use Illuminate\Database\Seeder;
 class CanchaSeeder extends Seeder
 {
     /**
-     * Crea las dos canchas de Wally con sus horarios típicos.
+     * Crea las dos canchas de Wally y franjas de 30 minutos de lunes a sábado.
      * Idempotente: puede ejecutarse varias veces sin duplicar registros.
      */
     public function run(): void
@@ -40,15 +40,6 @@ class CanchaSeeder extends Seeder
             ],
         ];
 
-        // Franjas típicas: lunes a viernes por la noche, fines de semana mañana y tarde
-        $franjasSemana = [
-            ['18:00', '19:00'], ['19:00', '20:00'], ['20:00', '21:00'], ['21:00', '22:00'],
-        ];
-        $franjasFinSemana = [
-            ['09:00', '10:00'], ['10:00', '11:00'], ['11:00', '12:00'],
-            ['16:00', '17:00'], ['17:00', '18:00'], ['18:00', '19:00'], ['19:00', '20:00'],
-        ];
-
         foreach ($canchas as $datos) {
             $cancha = Cancha::updateOrCreate(
                 ['nombre' => $datos['nombre']],
@@ -59,20 +50,14 @@ class CanchaSeeder extends Seeder
                 continue;
             }
 
-            foreach (range(1, 5) as $dia) { // Lunes a Viernes
-                foreach ($franjasSemana as [$inicio, $fin]) {
+            foreach (range(1, 6) as $dia) {
+                for ($minuto = 8 * 60; $minuto < 22 * 60; $minuto += 30) {
+                    $inicio = sprintf('%02d:%02d:00', intdiv($minuto, 60), $minuto % 60);
+                    $finMinuto = $minuto + 30;
+                    $fin = sprintf('%02d:%02d:00', intdiv($finMinuto, 60), $finMinuto % 60);
                     $cancha->horarios()->firstOrCreate(
-                        ['dia_semana' => $dia, 'hora_inicio' => $inicio.':00'],
-                        ['hora_fin' => $fin.':00', 'disponible' => true]
-                    );
-                }
-            }
-
-            foreach ([6, 7] as $dia) { // Sábado y Domingo
-                foreach ($franjasFinSemana as [$inicio, $fin]) {
-                    $cancha->horarios()->firstOrCreate(
-                        ['dia_semana' => $dia, 'hora_inicio' => $inicio.':00'],
-                        ['hora_fin' => $fin.':00', 'disponible' => true]
+                        ['dia_semana' => $dia, 'hora_inicio' => $inicio],
+                        ['hora_fin' => $fin, 'disponible' => true]
                     );
                 }
             }

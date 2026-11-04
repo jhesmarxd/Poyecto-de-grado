@@ -41,7 +41,7 @@
                 <span class="availability-step__number">3</span>
                 <div class="availability-step__content">
                     <span class="availability-step__label">Consulta los horarios</span>
-                    <small>Te mostraremos todas las horas libres.</small>
+                    <small>Te mostraremos las franjas libres y ocupadas.</small>
                     <button type="submit" class="btn btn--primary availability-submit">
                         <i class="bi bi-search" aria-hidden="true"></i>
                         <span>Consultar horarios</span>
@@ -56,32 +56,43 @@
                 <div class="availability-results__head">
                     <div class="client-page-header__icon" aria-hidden="true"><i class="bi bi-calendar2-week"></i></div>
                     <div>
-                        <span class="client-kicker">Horarios libres</span>
+                        <span class="client-kicker">Horarios del día</span>
                         <h2 id="availability-results-title">{{ $cancha->nombre }}</h2>
                         @if ($fecha)
-                            <p>Horas libres para el <strong>{{ \Carbon\Carbon::parse($fecha)->translatedFormat('l d \d\e F \d\e Y') }}</strong>.</p>
+                            <p>Franjas para el <strong>{{ \Carbon\Carbon::parse($fecha)->translatedFormat('l d \d\e F \d\e Y') }}</strong>.</p>
                         @endif
                     </div>
                     <span class="availability-results__price">Bs. {{ number_format($cancha->precio_por_hora, 2) }} / hora</span>
                 </div>
 
-                @if ($fecha && $horariosLibres->isNotEmpty())
-                    <p class="availability-results__help"><i class="bi bi-info-circle-fill" aria-hidden="true"></i> Toca un horario disponible para continuar con tu reserva.</p>
-                    <div class="availability-slots">
-                        @foreach ($horariosLibres as $horario)
-                            <a href="{{ route('reservas.crear', ['cancha_id' => $cancha->id, 'horario_id' => $horario->id, 'fecha' => $fecha]) }}"
-                               class="availability-slot">
-                                <strong>{{ \Carbon\Carbon::parse($horario->hora_inicio)->format('H:i') }} – {{ \Carbon\Carbon::parse($horario->hora_fin)->format('H:i') }}</strong>
-                                <span><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Disponible</span>
-                                <i class="bi bi-chevron-right" aria-hidden="true"></i>
-                            </a>
-                        @endforeach
-                    </div>
+                @if ($fecha && $franjas->isNotEmpty())
+                    <p class="availability-results__help"><i class="bi bi-info-circle-fill" aria-hidden="true"></i> Selecciona franjas libres consecutivas de 60 a 180 minutos.</p>
+                    <form method="GET" action="{{ route('reservas.crear') }}" data-availability-selection data-durations="{{ implode(',', $duraciones) }}">
+                        <input type="hidden" name="cancha_id" value="{{ $cancha->id }}">
+                        <input type="hidden" name="fecha" value="{{ $fecha }}">
+                        <input type="hidden" name="horario_id" value="" data-start-id>
+                        <input type="hidden" name="hora_fin" value="" data-end-time>
+                        <div class="availability-slots">
+                            @foreach ($franjas as $item)
+                                @php($horario = $item['horario'])
+                                <button type="button" class="availability-slot @unless($item['disponible']) is-unavailable @endunless"
+                                        data-slot data-id="{{ $horario->id }}" data-start="{{ substr($horario->hora_inicio, 0, 5) }}"
+                                        data-end="{{ substr($horario->hora_fin, 0, 5) }}" @disabled(! $item['disponible']) aria-pressed="false">
+                                    <strong>{{ substr($horario->hora_inicio, 0, 5) }} – {{ substr($horario->hora_fin, 0, 5) }}</strong>
+                                    <span>{{ $item['disponible'] ? 'Disponible' : 'No disponible' }}</span>
+                                </button>
+                            @endforeach
+                        </div>
+                        <div class="availability-selection-actions">
+                            <span data-selection-summary>Selecciona al menos 60 minutos.</span>
+                            <button type="submit" class="btn btn--primary" data-reserve disabled>Reservar</button>
+                        </div>
+                    </form>
                 @elseif ($fecha)
                     <div class="client-empty-state" role="status">
                         <i class="bi bi-calendar-x" aria-hidden="true"></i>
-                        <strong>No hay horarios libres para esta fecha</strong>
-                        <span>Prueba con otro día para encontrar más opciones.</span>
+                        <strong>No hay franjas configuradas para esta fecha</strong>
+                        <span>Puede ser un día cerrado. Prueba con otra fecha.</span>
                     </div>
                 @else
                     <div class="client-empty-state" role="status">

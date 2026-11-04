@@ -43,7 +43,7 @@ class ConfiguracionReservaController extends Controller
             'permitir_hoy' => ['nullable', 'boolean'],
             'permitir_futuras' => ['nullable', 'boolean'],
             'duraciones_permitidas' => ['required', 'array', 'min:1'],
-            'duraciones_permitidas.*' => ['integer', Rule::in([60, 90, 120])],
+            'duraciones_permitidas.*' => ['integer', Rule::in([60, 90, 120, 150, 180])],
             'horarios' => ['required', 'array', 'size:7'],
             'horarios.*.abierto' => ['nullable', 'boolean'],
             'horarios.*.hora_apertura' => ['nullable', 'date_format:H:i'],

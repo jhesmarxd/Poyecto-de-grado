@@ -37,6 +37,7 @@ class ChatbotConversationLifecycleTest extends TestCase
         $this->cliente = User::factory()->create([
             'rol' => User::ROL_CLIENTE,
             'estado' => true,
+            'telefono' => '71234567',
         ]);
         $this->actingAs($this->cliente);
     }

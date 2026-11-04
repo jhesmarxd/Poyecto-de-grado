@@ -11,7 +11,7 @@
         <div class="hero-text">
             <span class="eyebrow">Recepción · Operación diaria</span>
             <h1 class="hero-title">¡Hola, <span>{{ $nombreCorto }}</span>!</h1>
-            <p class="hero-sub">{{ \Illuminate\Support\Carbon::parse($fecha)->translatedFormat('l d \d\e F \d\e Y') }} · Agenda operativa: confirma, registra entradas y finaliza salidas desde una sola pantalla.</p>
+            <p class="hero-sub">{{ \Illuminate\Support\Carbon::parse($fecha)->translatedFormat('l d \d\e F \d\e Y') }} · Agenda operativa: registra entradas, salidas y cobros presenciales.</p>
         </div>
         <div class="hero-actions">
             <div class="hero-mascot" aria-hidden="true">
@@ -30,11 +30,6 @@
             <div class="kpi-label">Reservas de hoy</div>
             <div class="kpi-value">{{ $resumen['total'] }}</div>
             <div class="kpi-compare"><span>agenda completa</span></div>
-        </div>
-        <div class="kpi-card c-purple">
-            <div class="kpi-label">Por confirmar</div>
-            <div class="kpi-value">{{ $resumen['pendientes'] }}</div>
-            <div class="kpi-compare"><span>requieren validación</span></div>
         </div>
         <div class="kpi-card c-success">
             <div class="kpi-label">Esperando llegada</div>
@@ -97,13 +92,7 @@
                                     <div>Salida: {{ $reserva->check_out_at?->format('H:i') ?? '—' }}</div>
                                 </td>
                                 <td class="text-end text-nowrap">
-                                    @if ($reserva->estado === \App\Models\Reserva::ESTADO_PENDIENTE)
-                                        <form method="POST" action="{{ route('recepcionista.reservas.estado', $reserva) }}" class="d-inline">
-                                            @csrf
-                                            <input type="hidden" name="estado" value="{{ \App\Models\Reserva::ESTADO_CONFIRMADA }}">
-                                            <button type="submit" class="btn btn--sm btn--outline-primary">Confirmar</button>
-                                        </form>
-                                    @elseif ($reserva->estado === \App\Models\Reserva::ESTADO_CONFIRMADA && $reserva->check_in_at === null)
+                                    @if ($reserva->estado === \App\Models\Reserva::ESTADO_CONFIRMADA && $reserva->check_in_at === null)
                                         <form method="POST" action="{{ route('recepcionista.checkin.store', $reserva) }}" class="d-inline">
                                             @csrf
                                             <button type="submit" class="btn btn--sm btn--success">Registrar entrada</button>

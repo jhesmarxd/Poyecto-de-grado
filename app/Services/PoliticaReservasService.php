@@ -116,8 +116,8 @@ class PoliticaReservasService
             return new ResultadoDisponibilidad(ResultadoDisponibilidad::CANCHA_NO_HABILITADA, 'La cancha no está habilitada para reservas.');
         }
 
-        if ($this->esHorarioPasado($fecha, $inicio)) {
-            return new ResultadoDisponibilidad(ResultadoDisponibilidad::HORARIO_PASADO, 'Ese horario ya pasó o comenzó.');
+        if ($this->antesDeSiguienteHora($fecha, $inicio)) {
+            return new ResultadoDisponibilidad(ResultadoDisponibilidad::HORARIO_PASADO, 'Para hoy, elige una franja que comience desde la siguiente hora completa.');
         }
 
         if ($this->bloqueadoPorExcepcion($cancha->id, $fecha, $inicio, $fin)) {
@@ -159,26 +159,76 @@ class PoliticaReservasService
             ->orderBy('hora_inicio')
             ->get();
 
-        return $horarios->reject(function (Horario $horario) use ($cancha, $fecha, $semanal): bool {
+        $reservas = Reserva::query()->activas()->deCanchaEnFecha($cancha->id, $fecha)
+            ->get(['hora_inicio_reserva', 'hora_fin_reserva']);
+        $excepciones = Schema::hasTable('excepciones_reserva')
+            ? ExcepcionReserva::query()->whereDate('fecha', $fecha)
+                ->where('estado', ExcepcionReserva::ESTADO_APLICADA)
+                ->where(fn ($q) => $q->whereNull('cancha_id')->orWhere('cancha_id', $cancha->id))->get()
+            : collect();
+
+        return $horarios->reject(function (Horario $horario) use ($cancha, $fecha, $semanal, $reservas, $excepciones): bool {
             $apertura = $semanal ? $this->normalizarHora($semanal->hora_apertura) : null;
             $cierre = $semanal ? $this->normalizarHora($semanal->hora_cierre) : null;
             if ($semanal && ($horario->hora_inicio < $apertura || $horario->hora_fin > $cierre)) {
                 return true;
             }
-            if ($this->esHorarioPasado($fecha, $horario->hora_inicio)) {
+            if ($this->antesDeSiguienteHora($fecha, $horario->hora_inicio)) {
                 return true;
             }
-            if ($this->bloqueadoPorExcepcion($cancha->id, $fecha, $horario->hora_inicio, $horario->hora_fin)) {
+            if ($this->bloqueadoPorExcepcion($cancha->id, $fecha, $horario->hora_inicio, $horario->hora_fin, $excepciones)) {
                 return true;
             }
 
-            return Reserva::query()
-                ->activas()
-                ->deCanchaEnFecha($cancha->id, $fecha)
-                ->where('hora_inicio_reserva', '<', $horario->hora_fin)
-                ->where('hora_fin_reserva', '>', $horario->hora_inicio)
-                ->exists();
+            return $reservas->contains(fn (Reserva $reserva) =>
+                $reserva->hora_inicio_reserva < $horario->hora_fin
+                && $reserva->hora_fin_reserva > $horario->hora_inicio);
         })->values();
+    }
+
+    /** Franjas configuradas con su estado; solo se omiten horas ya transcurridas de hoy. */
+    public function franjasParaConsulta(Cancha $cancha, string $fecha): Collection
+    {
+        if ($this->validarFecha($fecha)) {
+            return collect();
+        }
+
+        $semanal = $this->horarioSemanal($fecha);
+        if ($semanal && ! $semanal->abierto) {
+            return collect();
+        }
+
+        $dia = Carbon::parse($fecha, $this->zonaHoraria())->dayOfWeekIso;
+        $libres = $this->horariosLibres($cancha, $fecha)->pluck('id')->all();
+
+        return $cancha->horarios()->where('dia_semana', $dia)
+            ->where(fn ($q) => $q->whereNull('vigente_desde')->orWhereDate('vigente_desde', '<=', $fecha))
+            ->where(fn ($q) => $q->whereNull('vigente_hasta')->orWhereDate('vigente_hasta', '>=', $fecha))
+            ->orderBy('hora_inicio')->get()
+            ->filter(function (Horario $franja) use ($fecha, $semanal): bool {
+                if ($this->antesDeSiguienteHora($fecha, $franja->hora_inicio)) {
+                    return false;
+                }
+
+                return ! $semanal || ($franja->hora_inicio >= $semanal->hora_apertura
+                    && $franja->hora_fin <= $semanal->hora_cierre);
+            })
+            ->map(fn (Horario $franja) => [
+                'horario' => $franja,
+                'disponible' => $franja->disponible && in_array($franja->id, $libres, true),
+            ])->values();
+    }
+
+    public function antesDeSiguienteHora(string $fecha, string $horaInicio): bool
+    {
+        $ahora = Carbon::now($this->zonaHoraria());
+        if ($fecha !== $ahora->toDateString()) {
+            return false;
+        }
+
+        $limite = $ahora->copy()->startOfHour()->addHour();
+
+        return Carbon::parse($fecha.' '.$horaInicio, $this->zonaHoraria())->lt($limite);
     }
 
     public function consultarRango(string $fecha, string $horaInicio, string $horaFin, ?Cancha $cancha = null): ResultadoDisponibilidad
@@ -406,13 +456,13 @@ class PoliticaReservasService
         return collect($opciones[0])->except(['distancia', 'posterior'])->all();
     }
 
-    private function bloqueadoPorExcepcion(int $canchaId, string $fecha, string $inicio, string $fin): bool
+    private function bloqueadoPorExcepcion(int $canchaId, string $fecha, string $inicio, string $fin, ?Collection $excepciones = null): bool
     {
         if (! Schema::hasTable('excepciones_reserva')) {
             return false;
         }
 
-        $excepciones = ExcepcionReserva::query()
+        $excepciones ??= ExcepcionReserva::query()
             ->whereDate('fecha', $fecha)
             ->where('estado', ExcepcionReserva::ESTADO_APLICADA)
             ->where(fn ($query) => $query->whereNull('cancha_id')->orWhere('cancha_id', $canchaId))

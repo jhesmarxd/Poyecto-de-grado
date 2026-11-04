@@ -29,7 +29,7 @@
                 <div class="col-md-3 d-flex align-items-end"><label class="form-check mb-2"><input class="form-check-input" type="checkbox" name="permitir_futuras" value="1" @checked(old('permitir_futuras', $configuracion['permitir_futuras']))> Permitir fechas futuras</label></div>
                 <div class="col-md-3">
                     <label class="form-label d-block">Duraciones</label>
-                    @foreach([60 => '60 min', 90 => '90 min', 120 => '120 min'] as $valor => $etiqueta)
+                    @foreach([60 => '60 min', 90 => '90 min', 120 => '120 min', 150 => '150 min', 180 => '180 min'] as $valor => $etiqueta)
                         <label class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="duraciones_permitidas[]" value="{{ $valor }}" @checked(in_array($valor, old('duraciones_permitidas', $configuracion['duraciones_permitidas'])))> {{ $etiqueta }}</label>
                     @endforeach
                 </div>

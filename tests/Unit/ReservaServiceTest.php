@@ -221,7 +221,7 @@ class ReservaServiceTest extends TestCase
             'cancha_id' => $cancha->id,
             'dia_semana' => Carbon::parse($fecha)->dayOfWeekIso,
         ]);
-        $usuario = User::factory()->create();
+        $usuario = User::factory()->create(['telefono' => '71234567']);
 
         Reserva::factory()->create([
             'cancha_id' => $cancha->id,

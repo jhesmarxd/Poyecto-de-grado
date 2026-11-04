@@ -119,6 +119,10 @@ class ReservaService
      */
     public function crearReserva(User $user, array $data): Reserva
     {
+        if (blank($user->name) || ! filter_var($user->email, FILTER_VALIDATE_EMAIL) || ! $user->tieneCelularValido()) {
+            abort(422, 'Completa nombre, correo y celular válido en el perfil del cliente antes de reservar.');
+        }
+
         $reserva = DB::transaction(function () use ($user, $data) {
             // El orden fijo de bloqueos evita que dos solicitudes tomen la misma
             // cancha, horario o balón antes de que la primera transacción termine.
@@ -164,7 +168,7 @@ class ReservaService
             }
 
             $duracionMinutos = (int) $inicio->diffInMinutes($fin);
-            $duraciones = array_map('intval', $politica->configuracion()->duraciones_permitidas ?? [60, 90, 120]);
+            $duraciones = array_map('intval', $politica->configuracion()->duraciones_permitidas ?? [60, 90, 120, 150, 180]);
             if (! in_array($duracionMinutos, $duraciones, true)) {
                 abort(422, 'La duración permitida debe ser de '.implode(', ', $duraciones).' minutos.');
             }
@@ -213,7 +217,7 @@ class ReservaService
                     'monto_total' => $this->calcularMonto((float) $cancha->precio_por_hora, $balonId, $duracionMinutos),
                     'tipo_balon' => $this->determinarTipoBalon($balon),
                     'balon_id' => $balonId,
-                    'estado' => Reserva::ESTADO_PENDIENTE,
+                    'estado' => Reserva::ESTADO_CONFIRMADA,
                     'observaciones' => $data['observaciones'] ?? null,
                 ]);
             } catch (QueryException $exception) {
@@ -228,6 +232,7 @@ class ReservaService
         });
 
         $this->programarSincronizacionGoogle($reserva);
+        $this->notificar($reserva, ReservaNotificationService::TIPO_CONFIRMADA);
 
         return $reserva;
     }

@@ -24,6 +24,7 @@ class StoreReservaRequest extends FormRequest
         return [
             'cancha_id' => ['required', 'integer', 'exists:canchas,id'],
             'horario_id' => ['required', 'integer', 'exists:horarios,id'],
+            'hora_fin' => ['nullable', 'date_format:H:i'],
             'fecha' => ['required', 'date', 'after_or_equal:today'],
             'balon_id' => ['nullable', 'integer', 'exists:balones,id'],
             'observaciones' => ['nullable', 'string', 'max:500'],

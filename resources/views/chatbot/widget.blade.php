@@ -1,6 +1,7 @@
 {{-- Widget de chat flotante del chatbot --}}
 <div id="chatbot-widget" class="chatbot-widget"
      data-authenticated="{{ auth()->check() ? 'true' : 'false' }}"
+     data-phone-url="{{ route('reservas.celular') }}"
      @guest
          data-login-url="{{ route('login') }}"
          data-register-url="{{ route('register') }}"

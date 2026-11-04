@@ -272,7 +272,8 @@
 .cancha-picker__image img { width: 100%; height: 100%; object-fit: cover; }
 .cancha-picker__info { display: grid; align-content: center; gap: 3px; min-width: 0; }
 .cancha-picker__info strong { color: var(--t-base); font-size: 13px; }
-.cancha-picker__description { display: -webkit-box; overflow: hidden; color: var(--t-muted); font-size: 11px; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.cancha-picker__description { display: block; color: var(--t-muted); font-size: 11px; line-height: 1.35; }
+.cancha-picker__features { color: var(--t-muted); font-size: 11px; line-height: 1.4; }
 .cancha-picker__info small { color: var(--primary); font-size: 11px; font-weight: 700; }
 .cancha-picker__empty { grid-column: 1 / -1; margin: 8px; color: var(--t-muted); font-size: 13px; }
 @media (max-width: 560px) { .cancha-picker__panel { grid-template-columns: 1fr; width: max(100%, min(300px, 85vw)); } }
@@ -290,6 +291,12 @@
 .availability-slot strong { font-size: 17px; }
 .availability-slot span { display: inline-flex; align-items: center; gap: 6px; color: var(--success); font-size: 11.5px; font-weight: 750; }
 .availability-slot > i { grid-column: 2; grid-row: 1 / 3; color: var(--success); font-size: 20px; }
+.availability-slot { width: 100%; text-align: left; cursor: pointer; }
+.availability-slot.is-selected { border: 2px solid var(--primary); background: var(--primary-soft, #dff6f6); }
+.availability-slot.is-unavailable { opacity: .56; border-color: #ad4242; background: #fbeaea; cursor: not-allowed; }
+.availability-slot.is-unavailable span { color: #a02424; }
+.availability-selection-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.25rem; }
+.balon-pick input:disabled ~ .balon-card { border-color: #bf5353; background: #fff0f0; opacity: .6; cursor: not-allowed; }
 .client-empty-state { display: grid; justify-items: center; gap: 8px; padding: 38px 20px; color: var(--t-muted); text-align: center; }
 .client-empty-state > i { display: grid; place-items: center; width: 62px; height: 62px; border-radius: 20px; color: var(--primary); background: var(--primary-soft); font-size: 28px; }
 .client-empty-state strong { color: var(--t-base); font-size: 16px; }

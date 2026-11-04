@@ -29,7 +29,7 @@ class ChatbotTest extends TestCase
         parent::setUp();
 
         $this->actingAs(User::factory()->create([
-            'rol' => User::ROL_CLIENTE,
+            'rol' => User::ROL_CLIENTE, 'telefono' => '71234567',
             'estado' => true,
         ]));
     }
@@ -384,7 +384,7 @@ class ChatbotTest extends TestCase
     {
         $cancha = $this->canchaConHorarios();
         $cliente = User::factory()->create([
-            'rol' => User::ROL_CLIENTE,
+            'rol' => User::ROL_CLIENTE, 'telefono' => '71234567',
             'estado' => true,
         ]);
         $conversacion = Conversacion::create(['user_id' => $cliente->id, 'contexto' => []]);
@@ -402,12 +402,12 @@ class ChatbotTest extends TestCase
 
         $confirmacion = $bot->responder('sí, confirmar', $conversacion->fresh(), $cliente);
 
-        $this->assertStringContainsString('registrada correctamente', $confirmacion['respuesta']);
+        $this->assertStringContainsString('confirmada correctamente', $confirmacion['respuesta']);
         $this->assertDatabaseHas('reservas', [
             'user_id' => $cliente->id,
             'cancha_id' => $cancha->id,
             'balon_id' => null,
-            'estado' => Reserva::ESTADO_PENDIENTE,
+            'estado' => Reserva::ESTADO_CONFIRMADA,
         ]);
         $conversacion = $conversacion->fresh();
         $this->assertNull($conversacion->contextoDe(ReservaConversacionalService::CONTEXTO_BORRADOR));
@@ -417,10 +417,35 @@ class ChatbotTest extends TestCase
         );
     }
 
+    public function test_el_chatbot_pide_celular_sin_guardarlo_en_el_historial_y_luego_confirma(): void
+    {
+        $cancha = $this->canchaConHorarios();
+        $cliente = User::factory()->create([
+            'rol' => User::ROL_CLIENTE, 'estado' => true, 'telefono' => null,
+        ]);
+        $this->actingAs($cliente);
+        $conversacion = Conversacion::create(['user_id' => $cliente->id, 'contexto' => []]);
+        $bot = app(ChatbotService::class);
+
+        $resumen = $bot->responder(
+            "quiero reservar {$cancha->nombre} el lunes a las 6 PM por 1 hora con mi balón",
+            $conversacion, $cliente,
+        );
+        $this->assertSame('contacto', $resumen['componentes'][0]['tipo']);
+        $this->assertStringContainsString('Completa tu nombre', $bot->responder('sí, confirmar', $conversacion->fresh(), $cliente)['respuesta']);
+        $this->assertDatabaseCount('reservas', 0);
+
+        $this->postJson('/reservas/celular', ['telefono' => '71234567'])->assertOk();
+        $this->assertDatabaseMissing('mensajes_chatbot', ['contenido' => '71234567']);
+        $respuesta = $bot->responder('sí, confirmar', $conversacion->fresh(), $cliente->fresh());
+        $this->assertStringContainsString('confirmada correctamente', $respuesta['respuesta']);
+        $this->assertDatabaseHas('reservas', ['user_id' => $cliente->id, 'estado' => Reserva::ESTADO_CONFIRMADA]);
+    }
+
     public function test_el_cliente_puede_descartar_el_borrador_sin_crear_reserva(): void
     {
         $cancha = $this->canchaConHorarios();
-        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
         $conversacion = Conversacion::create(['user_id' => $cliente->id, 'contexto' => []]);
         $bot = app(ChatbotService::class);
 
@@ -439,7 +464,7 @@ class ChatbotTest extends TestCase
     public function test_un_borrador_vencido_no_puede_confirmarse(): void
     {
         $cancha = $this->canchaConHorarios();
-        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
         $conversacion = Conversacion::create(['user_id' => $cliente->id, 'contexto' => []]);
         $bot = app(ChatbotService::class);
 
@@ -464,8 +489,8 @@ class ChatbotTest extends TestCase
         $cancha = $this->canchaConHorarios();
         $horario = $cancha->horarios()->first();
         $fecha = app(ExtractorEntidades::class)->fecha('el lunes');
-        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
-        $otroCliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
+        $otroCliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
         $conversacion = Conversacion::create(['user_id' => $cliente->id, 'contexto' => []]);
         $bot = app(ChatbotService::class);
 
@@ -500,7 +525,7 @@ class ChatbotTest extends TestCase
             'nombre' => 'V200W',
             'precio_por_hora' => 70,
         ]);
-        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
         $conversacion = Conversacion::create(['user_id' => $cliente->id, 'contexto' => []]);
         $bot = app(ChatbotService::class);
 
@@ -535,7 +560,7 @@ class ChatbotTest extends TestCase
             Conversacion::create(['user_id' => $admin->id, 'contexto' => []]),
             $admin,
         );
-        $inactivo = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => false]);
+        $inactivo = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => false]);
         $clienteInactivo = $bot->responder(
             "quiero reservar {$cancha->nombre} el lunes a las 6 PM por 1 hora con mi balón",
             Conversacion::create(['user_id' => $inactivo->id, 'contexto' => []]),
@@ -551,7 +576,7 @@ class ChatbotTest extends TestCase
     public function test_el_proveedor_externo_no_puede_saltar_la_confirmacion_de_reserva(): void
     {
         $cancha = $this->canchaConHorarios();
-        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
         $conversacion = Conversacion::create(['user_id' => $cliente->id, 'contexto' => []]);
 
         $fake = new class extends ProveedorExterno
@@ -579,7 +604,7 @@ class ChatbotTest extends TestCase
     public function test_una_confirmacion_repetida_no_duplica_la_reserva(): void
     {
         $cancha = $this->canchaConHorarios();
-        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
         $conversacion = Conversacion::create(['user_id' => $cliente->id, 'contexto' => []]);
         $bot = app(ChatbotService::class);
 
@@ -611,8 +636,8 @@ class ChatbotTest extends TestCase
             'nombre' => 'V300W',
             'precio_por_hora' => 75,
         ]);
-        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
-        $otroCliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
+        $otroCliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
         $conversacion = Conversacion::create(['user_id' => $cliente->id, 'contexto' => []]);
         $bot = app(ChatbotService::class);
 
@@ -655,7 +680,7 @@ class ChatbotTest extends TestCase
             'nombre' => 'V5M5000',
             'precio_por_hora' => 72,
         ]);
-        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
         $conversacion = Conversacion::create(['user_id' => $cliente->id, 'contexto' => []]);
         $bot = app(ChatbotService::class);
 
@@ -677,7 +702,7 @@ class ChatbotTest extends TestCase
         auth()->logout();
         $this->get('/')->assertOk()->assertDontSee('id="chatbot-llamada"', false)->assertDontSee('id="chatbot-voz-estado"', false);
 
-        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
         $this->actingAs($cliente)->get('/')->assertOk()->assertDontSee('id="chatbot-llamada"', false)->assertDontSee('id="chatbot-voz-estado"', false);
 
         $admin = User::factory()->create(['rol' => User::ROL_ADMIN, 'estado' => true]);
@@ -686,14 +711,14 @@ class ChatbotTest extends TestCase
         $recepcionista = User::factory()->create(['rol' => User::ROL_RECEPCIONISTA, 'estado' => true]);
         $this->actingAs($recepcionista)->get('/')->assertOk()->assertDontSee('id="chatbot-llamada"', false);
 
-        $inactivo = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => false]);
+        $inactivo = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => false]);
         $this->actingAs($inactivo)->get('/')->assertOk()->assertDontSee('id="chatbot-llamada"', false);
     }
 
     public function test_el_borrador_tiene_prioridad_si_el_proveedor_clasifica_mal_una_confirmacion(): void
     {
         $cancha = $this->canchaConHorarios();
-        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
         $conversacion = Conversacion::create(['user_id' => $cliente->id, 'contexto' => []]);
         $bot = app(ChatbotService::class);
 
@@ -722,8 +747,8 @@ class ChatbotTest extends TestCase
 
     public function test_una_sesion_no_reutiliza_la_conversacion_privada_de_otro_usuario(): void
     {
-        $primero = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
-        $segundo = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
+        $primero = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
+        $segundo = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
 
         $this->actingAs($primero)
             ->postJson('/chatbot/mensaje', ['mensaje' => 'hola'])
@@ -741,7 +766,7 @@ class ChatbotTest extends TestCase
     public function test_el_endpoint_completa_la_reserva_con_la_misma_sesion_del_cliente(): void
     {
         $cancha = $this->canchaConHorarios();
-        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
 
         $this->actingAs($cliente)
             ->postJson('/chatbot/mensaje', [
@@ -755,7 +780,7 @@ class ChatbotTest extends TestCase
 
         $this->postJson('/chatbot/mensaje', ['mensaje' => 'sí, confirmar'])
             ->assertOk()
-            ->assertJsonPath('respuesta', fn ($texto) => str_contains($texto, 'registrada correctamente'));
+            ->assertJsonPath('respuesta', fn ($texto) => str_contains($texto, 'confirmada correctamente'));
 
         $this->assertDatabaseHas('reservas', ['user_id' => $cliente->id, 'cancha_id' => $cancha->id]);
     }
@@ -763,7 +788,7 @@ class ChatbotTest extends TestCase
     public function test_un_visitante_es_redirigido_al_registro_y_no_recupera_conversaciones(): void
     {
         auth()->logout();
-        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'estado' => true]);
+        $cliente = User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567', 'estado' => true]);
         $privada = Conversacion::create([
             'user_id' => $cliente->id,
             'contexto' => ['cancha_id' => 999],
@@ -799,7 +824,7 @@ class ChatbotTest extends TestCase
 
         $this->postJson('/chatbot/mensaje', ['mensaje' => 'sí, confirmar'])
             ->assertOk()
-            ->assertJsonPath('respuesta', fn ($texto) => str_contains($texto, 'registrada correctamente'));
+            ->assertJsonPath('respuesta', fn ($texto) => str_contains($texto, 'confirmada correctamente'));
 
         $reserva = Reserva::query()->where('cancha_id', $cancha->id)->sole();
         $this->assertSame($fecha, $reserva->fecha->toDateString());
@@ -818,7 +843,7 @@ class ChatbotTest extends TestCase
             ->assertJsonPath('componentes.0.tipo', 'opciones')
             ->assertJsonPath('componentes.0.entidad', 'cancha')
             ->assertJsonPath('componentes.0.items.0.titulo', 'Cancha Visual')
-            ->assertJsonPath('componentes.0.items.0.estado', 'Disponible')
+            ->assertJsonPath('componentes.0.items.0.estado', 'No disponible')
             ->assertJsonPath('componentes.0.items.0.imagen', fn ($url) => str_contains($url, 'img/canchas/cancha-1.jpeg'));
     }
 

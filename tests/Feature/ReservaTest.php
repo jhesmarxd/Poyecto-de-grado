@@ -60,7 +60,7 @@ class ReservaTest extends TestCase
         $response = $this->get('/disponibilidad?cancha_id='.$cancha->id.'&fecha='.$fecha);
 
         $response->assertOk();
-        $response->assertSee('Horas libres para el');
+        $response->assertSee('Franjas para el');
         $response->assertSee('18:00');
     }
 
@@ -105,7 +105,7 @@ class ReservaTest extends TestCase
         $this->assertDatabaseHas('reservas', [
             'cancha_id' => $cancha->id,
             'horario_id' => $horario->id,
-            'estado' => Reserva::ESTADO_PENDIENTE,
+            'estado' => Reserva::ESTADO_CONFIRMADA,
             'tipo_balon' => Reserva::BALON_PRESTADO,
             'balon_id' => $balon->id,
             'monto_total' => 25.00,

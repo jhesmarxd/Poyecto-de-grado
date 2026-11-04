@@ -28,7 +28,7 @@ class ConfiguracionReservaTest extends TestCase
 
     private function cliente(): User
     {
-        return User::factory()->create(['rol' => User::ROL_CLIENTE]);
+        return User::factory()->create(['rol' => User::ROL_CLIENTE, 'telefono' => '71234567']);
     }
 
     private function canchaConFranja(string $fecha, string $nombre = 'Cancha 1'): array

@@ -133,7 +133,7 @@ class ReservaConversacionalService
         if (empty($borrador['hora_fin'])) {
             $this->guardarBorrador($conversacion, $borrador);
 
-            return $prefijoCancha.'¿Hasta qué hora deseas reservar o cuánto tiempo quieres jugar? Puedes indicar 60, 90 o 120 minutos.';
+            return $prefijoCancha.'¿Hasta qué hora deseas reservar o cuánto tiempo quieres jugar? Puedes indicar 60, 90, 120, 150 o 180 minutos.';
         }
 
         $cancha = $this->resolverCancha($borrador);
@@ -210,7 +210,7 @@ class ReservaConversacionalService
         if (! empty($borrador['hora']) && empty($borrador['hora_fin'])) {
             $this->guardarBorrador($conversacion, $borrador);
 
-            return '¿Hasta qué hora deseas reservar o cuánto tiempo quieres jugar? Puedes indicar 60, 90 o 120 minutos.';
+            return '¿Hasta qué hora deseas reservar o cuánto tiempo quieres jugar? Puedes indicar 60, 90, 120, 150 o 180 minutos.';
         }
 
         $horario = $this->resolverHorario($borrador, $libres);
@@ -488,6 +488,7 @@ class ReservaConversacionalService
             ."• Cancha: {$cancha->nombre}\n"
             .'• Fecha: '.Carbon::parse($borrador['fecha'])->translatedFormat('l d \d\e F \d\e Y')."\n"
             .'• Horario: '.$this->formatoHora($horario->hora_inicio).' – '.$this->formatoHora($horaFin)."\n"
+            .'• Duración: '.$duracion." minutos\n"
             ."• Balón: {$balonTexto}\n"
             .'• Total: Bs. '.number_format($monto, 2).'.';
     }
@@ -505,6 +506,10 @@ class ReservaConversacionalService
             $this->descartarBorrador($conversacion);
 
             return 'La reserva conversacional está disponible únicamente para clientes activos.';
+        }
+
+        if (blank($usuario->name) || ! filter_var($usuario->email, FILTER_VALIDATE_EMAIL) || ! $usuario->tieneCelularValido()) {
+            return 'Completa tu nombre, correo y celular para continuar. Guarda el celular en el formulario del chat y después confirma explícitamente la reserva.';
         }
 
         $cancha = Cancha::disponibles()->find($borrador['cancha_id'] ?? null);
@@ -569,7 +574,7 @@ class ReservaConversacionalService
         $this->descartarBorrador($conversacion);
         $this->registrarReservaCreada($conversacion, $reserva);
 
-        return "Reserva #{$reserva->id} registrada correctamente y pendiente de confirmación. Puedes verla en Mis reservas.";
+        return "Reserva #{$reserva->id} confirmada correctamente. Puedes verla en Mis reservas.";
     }
 
     /**

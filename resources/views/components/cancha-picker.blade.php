@@ -22,6 +22,12 @@
                 <span class="cancha-picker__info">
                     <strong>{{ $cancha->nombre }}</strong>
                     <span class="cancha-picker__description">{{ $cancha->descripcion ?: 'Cancha disponible para jugar.' }}</span>
+                    <span class="cancha-picker__features">
+                        @if($cancha->color_malla) Malla: {{ $cancha->color_malla }} · @endif
+                        @if($cancha->altura_malla) Altura: {{ $cancha->altura_malla }} · @endif
+                        @if($cancha->tipo_piso) Piso: {{ $cancha->tipo_piso }} · @endif
+                        @if($cancha->tipo_recinto) Recinto: {{ $cancha->tipo_recinto }} @endif
+                    </span>
                     <small>Bs. {{ number_format($cancha->precio_por_hora, 2) }} / hora</small>
                 </span>
             </label>
